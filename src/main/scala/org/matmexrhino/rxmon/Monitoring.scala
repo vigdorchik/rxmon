@@ -55,35 +55,35 @@ object Monitoring {
      */
     def +(that: Observable[T]): Observable[T] =
       binop(observable, that, num.plus _)
-    def +[V <% T](v: V): Observable[T] = this + const(v: T)
+    def +[V <% T](v: V): Observable[T] = observable map (num.plus(_, v))
 
     /**
      * Creates an Observable of the difference of 2 observables.
      */
     def -(that: Observable[T]): Observable[T] =
       binop(observable, that, num.minus _)
-    def -[V <% T](v: V): Observable[T] = this - const(v: T)
+    def -[V <% T](v: V): Observable[T] = observable map (num.minus(_, v))
 
     /**
      * Creates an Observable of the product of 2 observables.
      */
     def *(that: Observable[T]): Observable[T] =
       binop(observable, that, num.times _)
-    def *[V <% T](v: V): Observable[T] = this * const(v: T)
+    def *[V <% T](v: V): Observable[T] = observable map (num.times(_, v))
 
     /**
      * Creates an Observable of the fact that (observable < that).
      */
     def <(that: Observable[T]): Observable[Boolean] =
       binop(observable, that, num.lt _)
-    def <[V <% T](v: V): Observable[Boolean] = this < const(v: T)
+    def <[V <% T](v: V): Observable[Boolean] = observable map (num.lt(_, v))
 
     /**
      * Creates an Observable of the fact that (observable > that).
      */
     def >(that: Observable[T]): Observable[Boolean] =
       binop(observable, that, num.gt _)
-    def >[V <% T](v: V): Observable[Boolean] = this > const(v: T)
+    def >[V <% T](v: V): Observable[Boolean] = observable map (num.gt(_, v))
 
 
     /**
