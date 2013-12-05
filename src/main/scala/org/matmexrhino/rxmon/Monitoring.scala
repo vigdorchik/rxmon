@@ -26,23 +26,19 @@ object Monitoring {
       val subj = PublishSubject[R]()
       val probes = Queue[Sample]()
 
-      op.subscribe {
-        new Observer[T] {
-          def asJavaObserver: rx.Observer[_ >: T] = ???
-
-          override def onError(err: Throwable) { subj.onError(err) }
-          override def onCompleted() { subj.onCompleted() }
-          override def onNext(value: T) {
-            val now = System.currentTimeMillis
-            probes enqueue ((now, value))
-            val start = now - millis
-            probes dequeueAll {
-              case (ts, _) => ts < start
-            }
-            subj onNext f(start, probes)
+      op.subscribe (
+        onError = { err => subj.onError(err) },
+        onCompleted = { () => subj.onCompleted() },
+        onNext = { value =>
+          val now = System.currentTimeMillis
+          probes enqueue ((now, value))
+          val start = now - millis
+          probes dequeueAll {
+            case (ts, _) => ts < start
           }
+          subj onNext f(start, probes)
         }
-      }
+      )
       subj
     }
   }
