@@ -128,9 +128,13 @@ object Monitoring {
 
     /**
      * Creates an Observable that yields true iff observable stays true for a specified period.
+     * Only changes are emitted.
      */
-    def stable(d: Duration): Observable[Boolean] = aggregate(observable, d) { (_, probes) =>
-      probes forall (_._2)
+    def stable(d: Duration): Observable[Boolean] = {
+      val ticks = aggregate(observable, d) { (_, probes) =>
+        probes forall (_._2)
+      }
+      ticks.distinctUntilChanged
     }
   }
 

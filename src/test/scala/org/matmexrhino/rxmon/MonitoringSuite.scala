@@ -25,19 +25,20 @@ class MonitoringSuite extends FunSuite {
     assertEquals(range map (_ * range.last), F.toBlockingObservable.toList)
   }
 
-  def cut[T](obs: Observable[T]): Observable[T] = obs.takeUntil(Observable.interval(1.seconds))
+  def cut[T](obs: Observable[T], d: Duration): Observable[T] = obs.takeUntil(Observable.interval(d))
 
   test("stable") {
     val X: Observable[Double] = Observable.interval(50.milliseconds) map (x => math.sin(x.toDouble))
-    val F: Observable[Boolean] = cut((X < 1).stable(200.milliseconds))
-    assertTrue(F.toBlockingObservable.toList.forall { b => b })
+    val F: Observable[Boolean] = cut((X > -1 && X < 1).stable(200.milliseconds), 1.seconds)
+    val l = F.toBlockingObservable.toList
+    assertTrue(l.size == 1 && l.head)
   }
 
   test("monotonic") {
     val X: Observable[Long] = Observable.interval(50.milliseconds)
-    val F: Observable[Double] = cut(X.avg(200.milliseconds))
-    val G: Observable[Long] = cut(X.min(200.milliseconds))
-    val H: Observable[Long] = cut(X.max(200.milliseconds))
+    val F: Observable[Double] = cut(X.avg(200.milliseconds), 1.seconds)
+    val G: Observable[Long] = cut(X.min(200.milliseconds), 1.seconds)
+    val H: Observable[Long] = cut(X.max(200.milliseconds), 1.seconds)
 
     def check[T: Ordering](obs: Observable[T]) {
       val l = obs.toBlockingObservable.toList

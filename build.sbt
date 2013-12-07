@@ -1,3 +1,7 @@
+organization := "org.matmexrhino"
+
+name := "rxmon"
+
 scalaVersion := "2.10.2"
 
 libraryDependencies ++= Seq(
