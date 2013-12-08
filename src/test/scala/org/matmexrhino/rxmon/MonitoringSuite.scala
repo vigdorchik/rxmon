@@ -48,4 +48,11 @@ class MonitoringSuite extends FunSuite {
     check(G)
     check(H)
   }
+
+  test("avg") {
+    val X: Observable[Double] = Observable.interval(50.milliseconds) map (x => (2*(x % 2) - 1).toDouble)
+    val F: Observable[Double] = cut(X.avg(100.milliseconds), 1.seconds)
+    val l = F.toBlockingObservable.toList
+    assertTrue(l.forall(x => math.abs(x) < 0.1))
+  }
 }

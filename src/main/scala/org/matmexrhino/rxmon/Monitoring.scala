@@ -22,6 +22,7 @@ object Monitoring {
 
     def aggregate[R](op: Observable[T], d: Duration)(f: (Timestamp, Seq[Sample]) => R): Observable[R] = {
       val millis = d.toMillis
+      val startFeed = System.currentTimeMillis + millis
 
       val subj = PublishSubject[R]()
       val probes = Queue[Sample]()
@@ -36,7 +37,7 @@ object Monitoring {
           probes dequeueAll {
             case (ts, _) => ts < start
           }
-          subj onNext f(start, probes)
+          if (now >= startFeed) subj onNext f(start, probes)
         }
       )
       subj
