@@ -27,12 +27,12 @@ object Monitoring {
       val subj = PublishSubject[R]()
       val probes = Queue[Sample]()
 
-      op.subscribe (
+      op.timestamp.subscribe (
         onError = { err => subj.onError(err) },
         onCompleted = { () => subj.onCompleted() },
         onNext = { value =>
-          val now = System.currentTimeMillis
-          probes enqueue ((now, value))
+          val (now, _) = value
+          probes enqueue value
           val start = now - millis
           probes dequeueAll {
             case (ts, _) => ts < start
