@@ -11,8 +11,7 @@ import rx.lang.scala.subjects.PublishSubject
 
 object Monitoring {
   sealed trait Ops[T] {
-    type Timestamp = Long
-    type Sample = (Timestamp, T)
+    type Sample = (Long, T)
 
     def binop[T, R](lop: Observable[T], rop: Observable[T], f: (T, T) => R): Observable[R] =
       if (lop eq rop)
@@ -20,7 +19,7 @@ object Monitoring {
       else
         lop combineLatest rop map f.tupled
 
-    def aggregate[R](op: Observable[T], d: Duration)(f: (Timestamp, Seq[Sample]) => R): Observable[R] = {
+    def aggregate[R](op: Observable[T], d: Duration)(f: Seq[Sample] => R): Observable[R] = {
       val millis = d.toMillis
       val startFeed = System.currentTimeMillis + millis
 
@@ -37,7 +36,7 @@ object Monitoring {
           probes dequeueAll {
             case (ts, _) => ts < start
           }
-          if (now >= startFeed) subj onNext f(start, probes)
+          if (now >= startFeed) subj onNext f(probes)
         }
       )
       subj
@@ -86,10 +85,10 @@ object Monitoring {
     /**
      * Creates an Observable of the average over a certain period.
      */
-    def avg(d: Duration): Observable[Double] = aggregate(observable, d) { (start, probes) =>
-      val (area, _) = ((0.0, start) /: probes) {
-        case ((res, start), (ts, value)) =>
-          (res + num.toDouble(value) * (ts - start), ts)
+    def avg(d: Duration): Observable[Double] = aggregate(observable, d) { probes =>
+      val area = (0.0 /: probes.zip(probes.tail)) {
+        case (res, ((t1, s1), (t2, s2))) =>
+          res + (num.toDouble(s1) + num.toDouble(s2)) * (t2 - t1) / 2
       }
       area / d.toMillis
     }
@@ -97,12 +96,12 @@ object Monitoring {
     /**
      * Creates an Observable of the minimum over a certain period.
      */
-    def min(d: Duration): Observable[T] = aggregate(observable, d) { (_, probes) => probes.min(sampleOrd)._2 }
+    def min(d: Duration): Observable[T] = aggregate(observable, d) { probes => probes.min(sampleOrd)._2 }
 
     /**
      * Creates an Observable of the maximum over a certain period.
      */
-    def max(d: Duration): Observable[T] = aggregate(observable, d) { (_, probes) => probes.max(sampleOrd)._2 }
+    def max(d: Duration): Observable[T] = aggregate(observable, d) { probes => probes.max(sampleOrd)._2 }
 
 
     private def sampleOrd: Ordering[Sample] = num.on (_._2)
@@ -132,7 +131,7 @@ object Monitoring {
      * Only changes are emitted.
      */
     def stable(d: Duration): Observable[Boolean] = {
-      val ticks = aggregate(observable, d) { (_, probes) =>
+      val ticks = aggregate(observable, d) { probes =>
         probes forall (_._2)
       }
       ticks.distinctUntilChanged
