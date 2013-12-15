@@ -4,13 +4,12 @@
 package org.maxmexrhino.rxmon
 
 import scala.collection.mutable.Queue
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
 import scala.math.{Numeric, Ordering}
 import rx.lang.scala.{Observable, Observer}
-import rx.lang.scala.subjects.PublishSubject
 
 object Monitoring {
-  sealed trait Ops[T] {
+  private[Monitoring] sealed trait Ops[T] {
     type Sample = (Long, T)
 
     def binop[T, R](lop: Observable[T], rop: Observable[T], f: (T, T) => R): Observable[R] =
@@ -19,28 +18,26 @@ object Monitoring {
       else
         lop combineLatest rop map f.tupled
 
-    def aggregate[R](op: Observable[T], d: Duration)(f: Seq[Sample] => R): Observable[R] = {
-      val millis = d.toMillis
-      val startFeed = System.currentTimeMillis + millis
+    def aggregate[R](op: Observable[T], d: Duration)(f: Seq[Sample] => R): Observable[R] =
+      Observable { observer =>
+        val millis = d.toMillis
+        val startFeed = System.currentTimeMillis + millis
+        val probes = Queue[Sample]()
 
-      val subj = PublishSubject[R]()
-      val probes = Queue[Sample]()
-
-      op.timestamp.subscribe (
-        onError = { err => subj.onError(err) },
-        onCompleted = { () => subj.onCompleted() },
-        onNext = { value =>
-          val (now, _) = value
-          probes enqueue value
-          val start = now - millis
-          probes dequeueAll {
-            case (ts, _) => ts < start
+        op.timestamp.subscribe (
+          onError = { err => observer.onError(err) },
+          onCompleted = { () => observer.onCompleted() },
+          onNext = { value =>
+            val (now, _) = value
+            probes enqueue value
+            val start = now - millis
+            probes dequeueAll {
+              case (ts, _) => ts < start
+            }
+            if (now >= startFeed) observer onNext f(probes)
           }
-          if (now >= startFeed) subj onNext f(probes)
-        }
-      )
-      subj
-    }
+        )
+      }
   }
 
   implicit class NumericObservableOps[T: Numeric](observable: Observable[T]) extends Ops[T] {
@@ -136,6 +133,17 @@ object Monitoring {
       }
       ticks.distinctUntilChanged
     }
+  }
+
+  implicit class UnitObservableOps(ticker: Observable[Unit]) extends Ops[Unit] {
+    /**
+     * Create an Observable of the number of ticks of this ticker in duration.
+     */
+    def count(d: Duration): Observable[Int] = aggregate(ticker, d) (_.size)
+  }
+
+  implicit class UnitObserverOps(val observer: Observer[Unit]) extends AnyVal {
+    def tick(): Unit = observer onNext ()
   }
 
   /*

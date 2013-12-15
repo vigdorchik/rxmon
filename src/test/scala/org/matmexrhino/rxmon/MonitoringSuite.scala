@@ -35,7 +35,7 @@ class MonitoringSuite extends FunSuite {
   }
 
   test("monotonic") {
-    val X: Observable[Long] = Observable.interval(50.milliseconds)
+    val X: Observable[Long] = Observable.interval(150.milliseconds)
     val F: Observable[Double] = cut(X.avg(400.milliseconds), 1.seconds)
     val G: Observable[Long] = cut(X.min(400.milliseconds), 1.seconds)
     val H: Observable[Long] = cut(X.max(400.milliseconds), 1.seconds)
@@ -50,9 +50,16 @@ class MonitoringSuite extends FunSuite {
   }
 
   test("avg") {
-    val X: Observable[Double] = Observable.interval(50.milliseconds) map (x => (2*(x % 2) - 1).toDouble)
-    val F: Observable[Double] = cut(X.avg(200.milliseconds), 1.seconds)
+    val X: Observable[Double] = Observable.interval(200.milliseconds) map (x => (2*(x % 2) - 1).toDouble)
+    val F: Observable[Double] = cut(X.avg(400.milliseconds), 1.seconds)
     val l = F.toBlockingObservable.toList
-    assertTrue(l.forall(x => math.abs(x) < 0.1))
+    assertTrue(l.forall(x => math.abs(x) < 0.0001))
+  }
+
+  test("count") {
+    val X: Observable[Unit] = Observable.interval(100.milliseconds) map (_ => ())
+    val F: Observable[Int] =  cut(X.count(400.milliseconds), 1.seconds)
+    val l = F.toBlockingObservable.toList
+    assertTrue(l.forall(_ <= 5)) // Additional element might come due to timer imprecision.
   }
 }
