@@ -62,4 +62,11 @@ class MonitoringSuite extends FunSuite {
     val l = F.toBlockingObservable.toList
     assertTrue(l.forall(_ <= 5)) // Additional element might come due to timer imprecision.
   }
+
+  test("diff") {
+    val X: Observable[Long] = Observable.interval(100.milliseconds)
+    val F: Observable[Double] =  cut(X.diff(), 1.seconds)
+    val l = F.toBlockingObservable.toList
+    assertTrue(l.forall(x => math.round(x) == 10))
+  }
 }

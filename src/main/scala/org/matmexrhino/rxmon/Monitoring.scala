@@ -7,6 +7,7 @@ import scala.collection.mutable.Queue
 import scala.concurrent.duration._
 import scala.math.{Numeric, Ordering}
 import rx.lang.scala.{Observable, Observer}
+import java.util.concurrent.TimeUnit
 
 object Monitoring {
   private[Monitoring] sealed trait Ops[T] {
@@ -100,8 +101,29 @@ object Monitoring {
      */
     def max(d: Duration): Observable[T] = aggregate(observable, d) { probes => probes.max(sampleOrd)._2 }
 
-
     private def sampleOrd: Ordering[Sample] = num.on (_._2)
+
+    /**
+     * Create an Observable of the difference of the source observable over time.
+     * @param unit TimeUnit to measure the time. Units not less than milliseconds are supported.
+     */
+    def diff(unit: TimeUnit = TimeUnit.SECONDS): Observable[Double] = Observable { observer =>
+      val mult: Double = 1.0 / TimeUnit.MILLISECONDS.convert(1, unit)
+      var prevSample: Option[Sample] = None
+      observable.timestamp.subscribe (
+        onError = { err => observer.onError(err) },
+        onCompleted = { () => observer.onCompleted() },
+        onNext = {
+          case curr@(t2, v2) =>
+            for ((t1, v1) <- prevSample) {
+              val dx = num.toDouble(num.minus(v2, v1))
+              val dt = (t2 - t1) * mult
+              observer.onNext(dx / dt)
+            }
+            prevSample = Some(curr)
+        }
+      )
+    }
   }
 
   implicit class BooleanObservableOps(observable: Observable[Boolean]) extends Ops[Boolean] {
