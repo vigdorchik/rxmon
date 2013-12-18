@@ -17,15 +17,17 @@ class MonitoringSuite extends FunSuite {
     assertEquals(X.toBlockingObservable.toList map f, F.toBlockingObservable.toList)
   }
 
-  test("binop") {
-    val range = 1 to 10
-    val X, Y: Observable[Int] = Observable(range)
-    val F: Observable[Int] = X * Y
-    // Range is propagated (deterministically) for one multiplier only. Why?
-    assertEquals(range map (_ * range.last), F.toBlockingObservable.toList)
-  }
-
   def cut[T](obs: Observable[T], d: Duration): Observable[T] = obs.takeUntil(Observable.interval(d))
+
+  test("binop") {
+    val X, Y: Observable[Long] = Observable.interval(100.milliseconds)
+    val F: Observable[Long] = cut(X * Y, 1.seconds)
+    val l = F.toBlockingObservable.toList.toSet
+    val expected = (0 to 9).zip(0 to 9).flatMap {
+      case (i, j) => List[Long](i*j, i*(j+1))
+    }.toSet
+    assertTrue(l forall expected) // Timer might tick for both X and Y at the same time.
+  }
 
   test("stable") {
     val X: Observable[Double] = Observable.interval(50.milliseconds) map (x => math.sin(x.toDouble))
