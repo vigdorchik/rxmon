@@ -69,6 +69,6 @@ class MonitoringSuite extends FunSuite {
     val X: Observable[Long] = Observable.interval(100.milliseconds)
     val F: Observable[Double] =  cut(X.diff(), 1.seconds)
     val l = F.toBlockingObservable.toList
-    assertTrue(l.forall(x => math.round(x) == 10))
+    assertTrue(l.forall(x => x > 8.0 && x < 12.0))
   }
 }
