@@ -9,8 +9,8 @@ import scala.math.{Numeric, Ordering}
 import rx.lang.scala.{Observable, Observer}
 import java.util.concurrent.TimeUnit
 
-object Monitoring {
-  private[Monitoring] sealed trait Ops[T] {
+object Operations {
+  private[Operations] trait Ops[T] {
     type Sample = (Long, T)
 
     def binop[T, R](lop: Observable[T], rop: Observable[T], f: (T, T) => R): Observable[R] =

@@ -5,11 +5,11 @@ import org.scalatest.junit.JUnitRunner
 import org.junit.Assert._
 import org.scalatest.FunSuite
 import rx.lang.scala.Observable
-import Monitoring._
+import Operations._
 import scala.concurrent.duration._
 
 @RunWith(classOf[JUnitRunner])
-class MonitoringSuite extends FunSuite {
+class OperationsSuite extends FunSuite {
   test("basic") {
     val X: Observable[Int] = Observable(1 to 100)
     val F: Observable[Int] = X * X * 2 + 1
