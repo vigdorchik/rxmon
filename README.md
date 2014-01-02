@@ -12,10 +12,8 @@ class MyMonitoring extends Registry {
   val actorErrors: Observable[Unit] = register[Unit]("some_error")
   val tooManyErrors: Observable[Boolean] =
     (count(actorError, 1.minutes) > 100).stable(1.minutes)
-  tooManyErrors.subscribe { error =>
-    if (error) {
-      // alert or something else
-    }
+  tooManyErrors.whenTrue { () =>
+    // alert or something else
   }
 }
 

@@ -166,6 +166,11 @@ object Operations {
       }
       ticks.distinctUntilChanged
     }
+
+    /**
+     * Subscribe to observable with action executed only when the condition is true.
+     */
+    def whenTrue(action:  () => Unit): Unit = observable.subscribe (if (_) action())
   }
 
   implicit class UnitObservableOps(ticker: Observable[Unit]) extends Ops[Unit] {
