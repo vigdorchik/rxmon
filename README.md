@@ -4,6 +4,22 @@ Provide a way to monitor your application activity through composing *[RxJava](h
 
 ## Details
 
+The defined combinators, that can be used to construct the final monitored Observable, include:
+
+* binary operations <b>+</b>, <b>-</b>, <b>*</b> with a constant or another <i>Observable</i> for <i>Numeric</i> <i>Observable</i>s.
+
+* comparison operations <b> < </b>, <b> > </b> with a constant or another <i>Observable</i> for <i>Numeric</i> <i>Observable</i>s.
+
+* logical operations <b>&&</b>, <b>||</b>, <b>^</b> for two <i>Boolean</i> <i>Observable</i>s.
+
+* <b>max</b>, <b>min</b>, <b>avg</b> over a specified <i>Duration</i> for <i>Numeric</i> <i>Observable</i>s.
+
+* <b>diff</b> giving an <i>Observable</i> of relative differences for <i>Numeric</i> <i>Observable</i>s. This is used to model variable growth.
+
+* <b>stable</b> for <i>Boolean</i> <i>Observable</i>s that yields true only if its operand observable is true during parameter <i>Duration</i>.
+
+* <b>count</b> the number of ticks of <i>Unit</i> <i>Observable</i>.
+
 ```Scala
 import org.matmexrhino.rxmon._
 import Monitoring._
