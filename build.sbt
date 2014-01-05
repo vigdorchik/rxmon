@@ -1,4 +1,6 @@
-organization := "org.matmexrhino"
+organization := "vigdorchik"
+
+version := "0.1.0"
 
 name := "rxmon"
 
