@@ -44,3 +44,36 @@ def receive = {
     ...
 }
 ```
+
+## Referencing
+
+This project is published on *[Bintray](https://bintray.com/)*.
+
+To reference from sbt:
+
+```Scala
+resolvers += "bintray-vigdorchik" at "http://dl.bintray.com/vigdorchik/maven"
+
+libraryDependencies += "org.matmexrhino" %% "rxmon" % "0.1.0"
+```
+
+To reference from maven:
+
+Add the repository to Maven:
+
+```XML
+<repository>
+  <id>bintray-vigdorchik</id>
+  <url>http://dl.bintray.com/vigdorchik/maven</url>
+</repository>
+```
+
+Resolve the library:
+
+```XML
+<dependency>
+  <groupId>org.matmerhino</groupId>
+  <artifactId>rxmon_2.10</artifactId>
+  <version>0.1.0</version>
+ </dependency>
+```

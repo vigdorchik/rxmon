@@ -1,10 +1,10 @@
-organization := "vigdorchik"
+organization := "org.matmexrhino"
 
 version := "0.1.0"
 
 name := "rxmon"
 
-scalaVersion := "2.10.2"
+scalaVersion := "2.10.3"
 
 libraryDependencies ++= Seq(
     "com.netflix.rxjava" % "rxjava-scala" % "0.15.1",
