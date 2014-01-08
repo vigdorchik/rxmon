@@ -31,7 +31,7 @@ object Operations {
         lop combineLatest rop map f.tupled
 
     def aggregate[R](op: Observable[T], d: Duration)(f: Seq[Sample] => R): Observable[R] =
-      Observable { observer =>
+      Observable create { observer =>
         val millis = d.toMillis
         val startFeed = System.currentTimeMillis + millis
         val probes = Queue[Sample]()
@@ -118,7 +118,7 @@ object Operations {
      * Create an Observable of the difference of the source observable over time.
      * @param unit TimeUnit to measure the time. Units not less than milliseconds are supported.
      */
-    def diff(unit: TimeUnit = TimeUnit.SECONDS): Observable[Double] = Observable { observer =>
+    def diff(unit: TimeUnit = TimeUnit.SECONDS): Observable[Double] = Observable create { observer =>
       val mult: Double = 1.0 / TimeUnit.MILLISECONDS.convert(1, unit)
       var prevSample: Option[Sample] = None
       observable.timestamp.subscribe (
@@ -187,5 +187,5 @@ object Operations {
   /*
    * Shorthand for creating const observables.
    */
-  def const[T](value: T): Observable[T] = Observable(value)
+  def const[T](value: T): Observable[T] = Observable items (value)
 }

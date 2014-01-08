@@ -25,7 +25,7 @@ import scala.concurrent.duration._
 @RunWith(classOf[JUnitRunner])
 class OperationsSuite extends FunSuite {
   test("basic") {
-    val X: Observable[Int] = Observable(1 to 100)
+    val X: Observable[Int] = Observable.from(1 to 100)
     val F: Observable[Int] = X * X * 2 + 1
     def f(x: Int) = x * x * 2 + 1
     assertEquals(X.toBlockingObservable.toList map f, F.toBlockingObservable.toList)
