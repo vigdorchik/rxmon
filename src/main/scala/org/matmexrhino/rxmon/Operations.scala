@@ -33,7 +33,6 @@ object Operations {
     def aggregate[R](op: Observable[T], d: Duration)(f: Seq[Sample] => R): Observable[R] =
       Observable create { observer =>
         val millis = d.toMillis
-        val startFeed = System.currentTimeMillis + millis
         val probes = Queue[Sample]()
 
         op.timestamp.subscribe (
@@ -46,7 +45,7 @@ object Operations {
             probes dequeueAll {
               case (ts, _) => ts < start
             }
-            if (now >= startFeed) observer onNext f(probes)
+            observer onNext f(probes)
           }
         )
       }

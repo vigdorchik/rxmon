@@ -19,7 +19,9 @@ import org.scalatest.junit.JUnitRunner
 import org.junit.Assert._
 import org.scalatest.FunSuite
 import rx.lang.scala.Observable
+import rx.lang.scala.schedulers.TestScheduler
 import Operations._
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration._
 
 @RunWith(classOf[JUnitRunner])
@@ -31,58 +33,89 @@ class OperationsSuite extends FunSuite {
     assertEquals(X.toBlockingObservable.toList map f, F.toBlockingObservable.toList)
   }
 
-  def cut[T](obs: Observable[T], d: Duration): Observable[T] = obs.takeUntil(Observable.interval(d))
+  def withScheduler[T](pre: TestScheduler => Observable[T])(post: List[T] => Unit)(implicit stop: Duration) = {
+    val scheduler = TestScheduler()
+    val obs = pre(scheduler).takeUntil(Observable.interval(stop, scheduler))
+    val l = ListBuffer[T]()
+    obs.subscribe (
+      onNext = {v =>
+        l += v
+      },
+      onError = { t => },
+      onCompleted = {() => }
+    )
+
+    val step = 50.milliseconds
+    val end = stop + step
+    for (_ <- 1 to (end / step).toInt) {
+      Thread.sleep(step.toMillis) // Otherwise Observable.timestamp sees it too quickly, need to mock timestamp!
+      scheduler.advanceTimeBy(step)
+    }
+    post(l.toList)
+  }
 
   test("binop") {
-    val X, Y: Observable[Long] = Observable.interval(100.milliseconds)
-    val F: Observable[Long] = cut(X * Y, 1.seconds)
-    val l = F.toBlockingObservable.toList.toSet
-    val expected = (0 to 9).zip(0 to 9).flatMap {
-      case (i, j) => List[Long](i*j, i*(j+1))
-    }.toSet
-    assertTrue(l forall expected) // Timer might tick for both X and Y at the same time.
+    implicit val stop = 1.seconds
+    withScheduler { scheduler =>
+      val X, Y: Observable[Long] = Observable.interval(100.milliseconds, scheduler)
+      X * Y
+    } { samples =>
+      val expected = (0 to 9).zip(0 to 9).flatMap {
+        case (i, j) => List[Long](i*j, i*(j+1))
+      }.toSet - 90L
+      assertTrue(samples.toSet == expected)
+    }
   }
 
   test("stable") {
-    val X: Observable[Double] = Observable.interval(50.milliseconds) map (x => math.sin(x.toDouble))
-    val F: Observable[Boolean] = cut((X > -1 && X < 1).stable(200.milliseconds), 1.seconds)
-    val l = F.toBlockingObservable.toList
-    assertTrue(l.size == 1 && l.head)
+    implicit val stop = 1.seconds
+    withScheduler { scheduler =>
+      val X: Observable[Double] = Observable.interval(50.milliseconds, scheduler) map (x => math.sin(x.toDouble))
+      (X > -1 && X < 1).stable(200.milliseconds)
+    } { samples =>
+      assertTrue(samples.size == 1 && samples.head)
+    }
   }
 
   test("monotonic") {
-    val X: Observable[Long] = Observable.interval(150.milliseconds)
-    val F: Observable[Double] = cut(X.avg(400.milliseconds), 1.seconds)
-    val G: Observable[Long] = cut(X.min(400.milliseconds), 1.seconds)
-    val H: Observable[Long] = cut(X.max(400.milliseconds), 1.seconds)
-
-    def check[T: Ordering](obs: Observable[T]) {
-      val l = obs.toBlockingObservable.toList
-      assertTrue(l == l.sorted)
+    implicit val stop = 1.seconds
+    def check[T: Ordering](l: List[T]) {
+      assertTrue(l.nonEmpty && l == l.sorted)
     }
-    check(F)
-    check(G)
-    check(H)
+    def X(scheduler: TestScheduler): Observable[Long] = Observable.interval(150.milliseconds, scheduler)
+
+    withScheduler { scheduler => X(scheduler).avg(400.milliseconds) } (check(_))
+    withScheduler { scheduler => X(scheduler).max(400.milliseconds) } (check(_))
+    withScheduler { scheduler => X(scheduler).min(400.milliseconds) } (check(_))
   }
 
   test("avg") {
-    val X: Observable[Double] = Observable.interval(200.milliseconds) map (x => (2*(x % 2) - 1).toDouble)
-    val F: Observable[Double] = cut(X.avg(400.milliseconds), 1.seconds)
-    val l = F.toBlockingObservable.toList
-    assertTrue(l.forall(x => math.abs(x) < 0.0001))
+    implicit val stop = 1.seconds
+    withScheduler { scheduler =>
+      val X: Observable[Double] = Observable.interval(200.milliseconds, scheduler) map (x => (2*(x % 2) - 1).toDouble)
+      X.avg(400.milliseconds)
+    } { samples =>
+      assertTrue(samples.nonEmpty && samples.forall(x => math.abs(x) < 0.0001))
+    }
   }
 
   test("count") {
-    val X: Observable[Unit] = Observable.interval(100.milliseconds) map (_ => ())
-    val F: Observable[Int] =  cut(X.count(400.milliseconds), 1.seconds)
-    val l = F.toBlockingObservable.toList
-    assertTrue(l.forall(_ <= 5)) // Additional element might come due to timer imprecision.
+    implicit val stop = 1.seconds
+    withScheduler { scheduler =>
+      val X: Observable[Unit] = Observable.interval(100.milliseconds, scheduler) map (_ => ())
+      X.count(400.milliseconds)
+    } { samples =>
+      assertTrue(samples == List(1, 2, 3, 4, 4, 4, 4, 4, 4))
+    }
   }
 
   test("diff") {
-    val X: Observable[Long] = Observable.interval(100.milliseconds)
-    val F: Observable[Double] =  cut(X.diff(), 1.seconds)
-    val l = F.toBlockingObservable.toList
-    assertTrue(l.forall(x => x > 8.0 && x < 12.0))
+    implicit val stop = 1.seconds
+    withScheduler { scheduler =>
+      val X: Observable[Long] = Observable.interval(100.milliseconds, scheduler)
+      X.diff()
+    } { samples =>
+      assertTrue(samples.nonEmpty && samples.forall(x => x > 8.0 && x < 12.0))
+    }
   }
 }
