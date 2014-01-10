@@ -170,6 +170,16 @@ object Operations {
      * Subscribe to observable with action executed only when the condition is true.
      */
     def whenTrue(action:  () => Unit): Unit = observable.subscribe (if (_) action())
+
+
+    /*
+     * Negate the given observable.
+     * For example, jittering can be expressed as follows:
+     * {{{
+     *   !(X.stable(t1)).stable(t2)
+     * }}}
+     */
+    def unary_!(): Observable[Boolean] = observable map (!_)
   }
 
   implicit class UnitObservableOps(ticker: Observable[Unit]) extends Ops[Unit] {

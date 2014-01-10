@@ -77,6 +77,18 @@ class OperationsSuite extends FunSuite {
     }
   }
 
+  test("jitter") {
+    implicit val stop = 1.seconds
+    withScheduler { scheduler =>
+      val X: Observable[Long] = Observable.interval(50.milliseconds, scheduler) map (_ % 2)
+      val t = 200.milliseconds
+      !((X < 1).stable(t)).stable(t)
+    } { samples =>
+      val drop = samples drop 1  // First sample is when things haven't stabilized.
+      assertTrue(drop.size == 1 && drop.head)
+    }
+  }
+
   test("monotonic") {
     implicit val stop = 1.seconds
     def check[T: Ordering](l: List[T]) {
