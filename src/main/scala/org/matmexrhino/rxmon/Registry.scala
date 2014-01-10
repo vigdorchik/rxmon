@@ -62,7 +62,10 @@ abstract class Registry extends Actor {
         ClassTag(classOf[java.lang.Float])
       else if (ct == ClassTag.Double)
         ClassTag(classOf[java.lang.Double])
+      else if (ct == ClassTag.Unit)
+        ClassTag(classOf[scala.runtime.BoxedUnit])
       else ct
+
     def receive = {
       case boxedTag(v) => observer onNext v.asInstanceOf[T]
     }
