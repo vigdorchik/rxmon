@@ -16,7 +16,7 @@ The defined combinators, that can be used to construct the final monitored Obser
 
 * <b>diff</b> giving an <i>Observable</i> of relative differences for <i>Numeric</i> <i>Observable</i>s. This is used to model variable growth.
 
-* <b>stable</b> for <i>Boolean</i> <i>Observable</i>s that yields true only if its operand observable is true during parameter <i>Duration</i>.
+* <b>always</b> for <i>Boolean</i> <i>Observable</i>s that yields true only if its operand observable is true during parameter <i>Duration</i>.
 
 * <b>count</b> the number of ticks of <i>Unit</i> <i>Observable</i>.
 
@@ -27,7 +27,7 @@ import Monitoring._
 class MyMonitoring extends Registry {
   val actorErrors: Observable[Unit] = register[Unit]("some_error")
   val tooManyErrors: Observable[Boolean] =
-    (count(actorError, 1.minutes) > 100).stable(1.minutes)
+    (count(actorError, 1.minutes) > 100).always(1.minutes)
   tooManyErrors.whenTrue { () =>
     // alert or something else
   }

@@ -71,7 +71,7 @@ class OperationsSuite extends FunSuite {
     implicit val stop = 1.seconds
     withScheduler { scheduler =>
       val X: Observable[Double] = Observable.interval(50.milliseconds, scheduler) map (x => math.sin(x.toDouble))
-      (X > -1 && X < 1).stable(200.milliseconds)
+      (X > -1 && X < 1).always(200.milliseconds)
     } { samples =>
       assertTrue(samples.size == 1 && samples.head)
     }
@@ -80,12 +80,12 @@ class OperationsSuite extends FunSuite {
   test("jitter") {
     implicit val stop = 1.seconds
     withScheduler { scheduler =>
-      val X: Observable[Long] = Observable.interval(50.milliseconds, scheduler) map (_ % 2)
+      val X: Observable[Boolean] = Observable.interval(50.milliseconds, scheduler) map (_ % 2 == 1)
       val t = 200.milliseconds
-      !((X < 1).stable(t)).stable(t)
+      !X.always(t) && !(!X).always(t)
     } { samples =>
-      val drop = samples drop 1  // First sample is when things haven't stabilized.
-      assertTrue(drop.size == 1 && drop.head)
+      // First sample is when things haven't stabilized.
+      assertTrue(samples.size == 2 && samples(1))
     }
   }
 

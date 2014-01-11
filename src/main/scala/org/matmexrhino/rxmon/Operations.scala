@@ -159,7 +159,7 @@ object Operations {
      * Creates an Observable that yields true iff observable stays true for a specified period.
      * Only changes are emitted.
      */
-    def stable(d: Duration): Observable[Boolean] = {
+    def always(d: Duration): Observable[Boolean] = {
       val ticks = aggregate(observable, d) { probes =>
         probes forall (_._2)
       }
@@ -176,7 +176,7 @@ object Operations {
      * Negate the given observable.
      * For example, jittering can be expressed as follows:
      * {{{
-     *   !(X.stable(t1)).stable(t2)
+     *   !X.always(t) && !(!X).always(t)
      * }}}
      */
     def unary_!(): Observable[Boolean] = observable map (!_)
