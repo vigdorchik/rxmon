@@ -73,7 +73,7 @@ class OperationsSuite extends FunSuite {
       val X: Observable[Double] = Observable.interval(50.milliseconds, scheduler) map (x => math.sin(x.toDouble))
       (X > -1 && X < 1).always(200.milliseconds)
     } { samples =>
-      assertTrue(samples.size == 1 && samples.head)
+      assertTrue(samples.nonEmpty && !samples.exists(!_))
     }
   }
 
@@ -82,10 +82,11 @@ class OperationsSuite extends FunSuite {
     withScheduler { scheduler =>
       val X: Observable[Boolean] = Observable.interval(50.milliseconds, scheduler) map (_ % 2 == 1)
       val t = 200.milliseconds
-      !X.always(t) && !(!X).always(t)
+      (!X.always(t) && !(!X).always(t)).always(t * 2)
     } { samples =>
-      // First sample is when things haven't stabilized.
-      assertTrue(samples.size == 2 && samples(1))
+      // First samples are when things haven't stabilized.
+      val drop = samples dropWhile (!_)
+      assertTrue(drop.nonEmpty && !drop.exists(!_))
     }
   }
 

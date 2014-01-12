@@ -157,26 +157,19 @@ object Operations {
 
     /**
      * Creates an Observable that yields true iff observable stays true for a specified period.
-     * Only changes are emitted.
      */
-    def always(d: Duration): Observable[Boolean] = {
-      val ticks = aggregate(observable, d) { probes =>
-        probes forall (_._2)
-      }
-      ticks.distinctUntilChanged
-    }
+    def always(d: Duration): Observable[Boolean] = aggregate(observable, d) (_ forall (_._2))
 
     /**
      * Subscribe to observable with action executed only when the condition is true.
      */
     def whenTrue(action:  () => Unit): Unit = observable.subscribe (if (_) action())
 
-
     /*
      * Negate the given observable.
      * For example, jittering can be expressed as follows:
      * {{{
-     *   !X.always(t) && !(!X).always(t)
+     *   (!X.always(t1) && !(!X).always(t1)).always(t2)
      * }}}
      */
     def unary_!(): Observable[Boolean] = observable map (!_)
