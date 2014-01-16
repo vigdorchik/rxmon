@@ -48,23 +48,18 @@ abstract class Registry extends Actor {
 
   private class Monitor[T](observer: Observer[T], ct: ClassTag[T]) extends Actor {
     val boxedTag =
-      if (ct == ClassTag.Byte)
-        ClassTag(classOf[java.lang.Byte])
-      else if (ct == ClassTag.Char)
-        ClassTag(classOf[java.lang.Character])
-      else if (ct == ClassTag.Short)
-        ClassTag(classOf[java.lang.Short])
-      else if (ct == ClassTag.Int)
-        ClassTag(classOf[java.lang.Integer])
-      else if (ct == ClassTag.Long)
-        ClassTag(classOf[java.lang.Long])
-      else if (ct == ClassTag.Float)
-        ClassTag(classOf[java.lang.Float])
-      else if (ct == ClassTag.Double)
-        ClassTag(classOf[java.lang.Double])
-      else if (ct == ClassTag.Unit)
-        ClassTag(classOf[scala.runtime.BoxedUnit])
-      else ct
+      ct match {
+        case `ClassTag`.`Byte` => ClassTag(classOf[java.lang.Byte])
+        case `ClassTag`.`Char` => ClassTag(classOf[java.lang.Character])
+        case `ClassTag`.`Short` => ClassTag(classOf[java.lang.Short])
+        case `ClassTag`.`Int` => ClassTag(classOf[java.lang.Integer])
+        case `ClassTag`.`Long` => ClassTag(classOf[java.lang.Long])
+        case `ClassTag`.`Float` => ClassTag(classOf[java.lang.Float])
+        case `ClassTag`.`Double` => ClassTag(classOf[java.lang.Double])
+        case `ClassTag`.`Boolean` => ClassTag(classOf[java.lang.Boolean])
+        case `ClassTag`.`Unit` => ClassTag(classOf[scala.runtime.BoxedUnit])
+        case _ => ct
+      }
 
     def receive = {
       case boxedTag(v) => observer onNext v.asInstanceOf[T]
