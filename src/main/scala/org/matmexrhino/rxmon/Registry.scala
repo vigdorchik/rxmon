@@ -75,25 +75,26 @@ trait PrimitiveBoxer[T] {
 }
 
 /* Batching requests from local actors. Statistics is aggregated and sent to target identified
-   from the registry after the specified duration. 'sum', 'min' and 'max' aggregation is provided
+   from the registry after the specified duration. 'avg', 'min' and 'max' aggregation is provided
    for numerics. Unit is aggregated to Int, and Boolean is aggregated according to natural
    operations. */
 
 case class BatchContext(val d: FiniteDuration, val registry: ActorRef, val id: String)
 
-abstract class Batcher[From: ClassTag, To](c: BatchContext) extends Actor with PrimitiveBoxer[From] {
+abstract class Batcher[From: ClassTag, Run, To](c: BatchContext) extends Actor with PrimitiveBoxer[From] {
   import c._
 
   def ct = implicitly[ClassTag[From]]
 
-  protected def aggregate(f: From, t: To): To
-  protected def zero: To
+  protected def aggregate(s: From, t: Run): Run
+  protected def zero: Run
+  protected def output(r: Run): To
 
-  private var curr: To = zero
+  private var curr: Run = zero
 
   private def send(target: ActorRef) {
     if (curr != zero) {
-      target ! curr
+      target ! output(curr)
       curr = zero
     }
   }
@@ -114,41 +115,49 @@ abstract class Batcher[From: ClassTag, To](c: BatchContext) extends Actor with P
   }
 }
 
+abstract class IdBatcher[From: ClassTag, To](c: BatchContext) extends Batcher[From, To, To](c) {
+  def output(t: To) = t
+}
+
 object Batcher {
-  def tick(c: BatchContext): Batcher[Unit, Int] =
-    new Batcher[Unit, Int](c) {
+  def tick(c: BatchContext): IdBatcher[Unit, Int] =
+    new IdBatcher[Unit, Int](c) {
       def aggregate(from: Unit, to: Int) = to + 1
       def zero: Int = 0
     }
 
-  def always(c: BatchContext): Batcher[Boolean, Boolean] =
-    new Batcher[Boolean, Boolean](c) {
+  def always(c: BatchContext): IdBatcher[Boolean, Boolean] =
+    new IdBatcher[Boolean, Boolean](c) {
       def aggregate(from: Boolean, to: Boolean) = from && to
       def zero: Boolean = true
     }
 
-  def ever(c: BatchContext): Batcher[Boolean, Boolean] =
-    new Batcher[Boolean, Boolean](c) {
+  def ever(c: BatchContext): IdBatcher[Boolean, Boolean] =
+    new IdBatcher[Boolean, Boolean](c) {
       def aggregate(from: Boolean, to: Boolean) = from || to
       def zero: Boolean = false
     }
 
-  private def numeric[T: Numeric: ClassTag](c: BatchContext)(f: (Numeric[T], T, T) => T): Batcher[T, T] =
-    new Batcher[T, T](c) {
+  private def numeric[T: Numeric: ClassTag](c: BatchContext)(f: (Numeric[T], T, T) => T): IdBatcher[T, T] =
+    new IdBatcher[T, T](c) {
       private val num = implicitly[Numeric[T]]
       def zero: T = num.zero
       def aggregate(from: T, to: T): T = f(num, from, to)
     }
 
-  def sum[T: Numeric: ClassTag](c: BatchContext): Batcher[T, T] = numeric(c) { (num, from, to) =>
-    num plus (from, to)
-  }
+  def avg[T: Numeric: ClassTag](c: BatchContext): Batcher[T, (T, Int), Double] =
+    new Batcher[T, (T, Int), Double](c) {
+      private val num = implicitly[Numeric[T]]
+      def aggregate(from: T, to: (T, Int)) = (num plus (from, to._1), to._2 + 1)
+      def zero: (T, Int) = (num.zero, 0)
+      def output(r: (T, Int)): Double = num.toDouble(r._1) / r._2
+    }
 
-  def max[T: Numeric: ClassTag](c: BatchContext): Batcher[T, T] = numeric(c) { (num, from, to) =>
+  def max[T: Numeric: ClassTag](c: BatchContext): IdBatcher[T, T] = numeric(c) { (num, from, to) =>
     num max (from, to)
   }
 
-  def min[T: Numeric: ClassTag](c: BatchContext): Batcher[T, T] = numeric(c) { (num, from, to) =>
+  def min[T: Numeric: ClassTag](c: BatchContext): IdBatcher[T, T] = numeric(c) { (num, from, to) =>
     num min (from, to)
   }
 }
