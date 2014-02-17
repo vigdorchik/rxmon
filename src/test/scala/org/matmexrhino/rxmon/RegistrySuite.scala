@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Eugene Vigdorchik.
+ * Copyright 2013-2014 Eugene Vigdorchik.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,40 +22,24 @@ import org.scalatest.FunSuite
 
 import akka.testkit.{ TestProbe, TestKit, ImplicitSender }
 import akka.actor.{ ActorRef, ActorSystem, Props }
-import rx.lang.scala.Observable
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.FunSuite
 import scala.reflect.ClassTag
 import scala.concurrent.duration._
-import scala.collection.mutable.ListBuffer
-
-case object Done
-// This is done just for the test. In prod you probably don't want your observables to escape.
-class TestRegistry[T](implicit tag: ClassTag[T]) extends Registry {
-  val X: Observable[T] = register[T]("X")
-  X.subscribe (buff += _)
-
-  val buff = ListBuffer[T]()
-
-  override def receive  = super.receive orElse {
-    case Done => sender ! buff.toList
-  }
-}
+import Tester._
 
 @RunWith(classOf[JUnitRunner])
 class RegistrySuite extends FunSuite {
   def doTest[T: ClassTag](l: List[T]) = {
     implicit val system = ActorSystem("test")
-    val registryActor = system.actorOf(Props(classOf[TestRegistry[T]], implicitly[ClassTag[T]]), "registry")
+    val registry = system.actorOf(Props(classOf[TestRegistry[T]], implicitly[ClassTag[T]]), "registry")
     val client = TestProbe()
-    client.send(registryActor, ListEntries)
-    val EntriesResponse(entries) = client.expectMsgClass(classOf[EntriesResponse])
-    val monitor = entries("X")
+    val monitor = Tester.getMonitor(registry, client)
 
     for (e <- l) monitor ! e
 
     client.expectNoMsg(1.seconds)
-    client.send(registryActor, Done)
+    client.send(registry, Done)
     val l1 = client.expectMsgClass(classOf[List[T]])
     assertEquals(l, l1)
 

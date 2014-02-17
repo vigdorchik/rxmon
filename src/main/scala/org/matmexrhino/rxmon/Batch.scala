@@ -81,14 +81,20 @@ object Batcher {
 
   private def numeric[T: Numeric: ClassTag](c: BatchContext)(f: (Numeric[T], T, T) => T): IdBatcher[T, T] =
     new IdBatcher[T, T](c) {
-      private val num = implicitly[Numeric[T]]
+      private def num = implicitly[Numeric[T]]
+      private var first = true
       def zero: T = num.zero
-      def aggregate(from: T, to: T): T = f(num, from, to)
+      def aggregate(from: T, to: T): T =
+	if (first) {
+	  first = false
+	  from
+	} else
+	  f(num, from, to)
     }
 
   def avg[T: Numeric: ClassTag](c: BatchContext): Batcher[T, (T, Int), Double] =
     new Batcher[T, (T, Int), Double](c) {
-      private val num = implicitly[Numeric[T]]
+      private def num = implicitly[Numeric[T]]
       def aggregate(from: T, to: (T, Int)) = (num plus (from, to._1), to._2 + 1)
       def zero: (T, Int) = (num.zero, 0)
       def output(r: (T, Int)): Double = num.toDouble(r._1) / r._2
