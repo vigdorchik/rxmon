@@ -1,3 +1,4 @@
+
 /*
  * Copyright 2013-2014 Eugene Vigdorchik.
  *
@@ -21,13 +22,12 @@ import scala.math.Numeric
 import scala.reflect.ClassTag
 import akka.actor.{ Actor, ActorRef, Props }
 
-case class BatchContext(val d: FiniteDuration, val registry: ActorRef, val id: String)
+case class BatchContext(d: FiniteDuration, target: ActorRef)
 
 /**
- * Batching requests from local actors. Statistics is aggregated and sent to target identified
- * from the registry after the specified duration. 'avg', 'min' and 'max' aggregation is provided
- * for numerics. Unit is aggregated to Int, and Boolean is aggregated according to natural
- * operations.
+ * Batching requests from local actors. Statistics is aggregated and sent to target after a specified
+ * duration. 'avg', 'min' and 'max' aggregation is provided for numerics. Unit is aggregated to Int,
+ * and Boolean is aggregated according to natural operations.
  * */
 abstract class Batcher[From: ClassTag, Run, To](c: BatchContext) extends Actor with ReceiveBoxed[From] {
   import c._
@@ -47,19 +47,12 @@ abstract class Batcher[From: ClassTag, Run, To](c: BatchContext) extends Actor w
     }
   }
 
-  registry ! ListEntries
+  import scala.concurrent.ExecutionContext.Implicits.global // TODO: revisit execution context usage here.
+  context.system.scheduler.schedule(d, d)(send(target))
 
   def receive: Receive = {
     case boxedTag(v) =>
       curr = aggregate(v, curr)
-    case EntriesResponse(map) =>
-      map.get(id) match {
-	case None =>
-	  sys.error(s"Couldn't find the target to send to for $id")
-	case Some(target) =>
-	  import scala.concurrent.ExecutionContext.Implicits.global // TODO: revise context usage here.
-	  context.system.scheduler.schedule(0.milliseconds, d)(send(target))
-      }
   }
 }
 
