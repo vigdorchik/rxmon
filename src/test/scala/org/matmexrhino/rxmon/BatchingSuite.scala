@@ -26,14 +26,24 @@ import akka.actor.{ ActorRef, ActorSystem, Props }
 
 @RunWith(classOf[JUnitRunner])
 class BatchingSuite extends FunSuite {
-  def doTest[T: ClassTag](expected: T)(f: (BatchContext, ActorSystem) => Unit) {
+  val P = 37
+  val gen = 2
+  val group = List.iterate(gen, P - 1)(x => (x * gen) % P )
+  assertEquals(P - 1, group.toSet.size)
+
+  def sendAll(target: ActorRef): Unit = for (i <- group) target ! i
+
+  def doTest[T: ClassTag](batch: BatchContext => Batcher[_, _, _], expected: T) {
     implicit val system = ActorSystem("test")
     val client = TestProbe()
     val registry = system.actorOf(Props(classOf[TestRegistry[T]], implicitly[ClassTag[T]]), "registry")
     val monitor = Tester.getMonitor(registry, client)
     val d = 1.seconds
+
     val c = BatchContext(d, monitor)
-    f(c, system)
+    val target = system.actorOf(Props(batch(c)))
+    sendAll(target)
+
     client.expectNoMsg(d plus 100.milliseconds)
     client.send(registry, Done)
     val l = client.expectMsgClass(classOf[List[T]])
@@ -42,21 +52,15 @@ class BatchingSuite extends FunSuite {
     system.shutdown()
   }
 
-  val P = 37
-  val gen = 2
-  def subgroup: List[Int] = List.iterate(gen, P - 1)(x => (x * gen) % P )
-
   test("min") {
-    doTest(1) { (c, s) =>
-      val batch = s.actorOf(Props(min[Int](c)))
-      for (i <- subgroup) batch ! i
-    }
+    doTest(min[Int] _, 1)
   }
 
   test("max") {
-    doTest(P - 1) { (c, s) =>
-      val batch = s.actorOf(Props(max[Int](c)))
-      for (i <- subgroup) batch ! i
-    }
+    doTest(max[Int] _, P - 1)
+  }
+
+  test("avg") {
+    doTest(avg[Int] _, P.toDouble / 2)
   }
 }

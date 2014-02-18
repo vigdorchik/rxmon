@@ -79,10 +79,10 @@ object Batcher {
       def zero: Boolean = false
     }
 
-  private def numeric[T: Numeric: ClassTag](c: BatchContext)(f: (Numeric[T], T, T) => T): IdBatcher[T, T] =
+  private def minmax[T: Numeric: ClassTag](c: BatchContext)(f: (Numeric[T], T, T) => T): IdBatcher[T, T] =
     new IdBatcher[T, T](c) {
       private def num = implicitly[Numeric[T]]
-      private var first = true
+      private var first = true // This hack would not be necessary if Numeric had minValue & maxValue.
       def zero: T = num.zero
       def aggregate(from: T, to: T): T =
 	if (first) {
@@ -100,11 +100,11 @@ object Batcher {
       def output(r: (T, Int)): Double = num.toDouble(r._1) / r._2
     }
 
-  def max[T: Numeric: ClassTag](c: BatchContext): IdBatcher[T, T] = numeric(c) { (num, from, to) =>
+  def max[T: Numeric: ClassTag](c: BatchContext): IdBatcher[T, T] = minmax(c) { (num, from, to) =>
     num max (from, to)
   }
 
-  def min[T: Numeric: ClassTag](c: BatchContext): IdBatcher[T, T] = numeric(c) { (num, from, to) =>
+  def min[T: Numeric: ClassTag](c: BatchContext): IdBatcher[T, T] = minmax(c) { (num, from, to) =>
     num min (from, to)
   }
 }
