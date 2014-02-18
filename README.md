@@ -45,6 +45,17 @@ def receive = {
 }
 ```
 
+## Batching
+
+To prevent network congestion, it's possible to aggregate statistics on a local node and only
+send the results of aggregation. Note, that aggregation naturally smoothens the curve, and prevents
+accidental hickups. Batching scheme must be carefully chosen to be consistent with the final rx stream.
+The following batching modes are supported:
+
+* <b>max</b>, <b>min</b>, <b>avg</b> for for <i>Numeric</i> variables.
+* <b>ever</b>, <b>never</b> for <i>Boolean</i> variables.
+* <b>tick</b> counts the number of ticks of <i>Unit</i> variable, and outputs <i>Int</i>.
+
 ## Referencing
 
 This project is published on *[Bintray](https://bintray.com/)*.
@@ -54,7 +65,7 @@ To reference from sbt:
 ```Scala
 resolvers += "bintray-vigdorchik" at "http://dl.bintray.com/vigdorchik/maven"
 
-libraryDependencies += "org.matmexrhino" %% "rxmon" % "0.1.0"
+libraryDependencies += "org.matmexrhino" %% "rxmon" % "0.2.0"
 ```
 
 To reference from maven:
