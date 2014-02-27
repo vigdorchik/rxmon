@@ -17,7 +17,7 @@ package org.maxmexrhino.rxmon
 import scala.collection.mutable.Queue
 import scala.concurrent.duration._
 import scala.math.{Numeric, Ordering}
-import rx.lang.scala.{Observable, Observer}
+import rx.lang.scala.{Observable, Observer, Scheduler, schedulers}
 import java.util.concurrent.TimeUnit
 
 object Operations {
@@ -30,12 +30,12 @@ object Operations {
       else
         lop combineLatest rop map f.tupled
 
-    def aggregate[R](op: Observable[T], d: Duration)(f: Seq[Sample] => R): Observable[R] =
+    def aggregate[R](op: Observable[T], d: Duration, s: Scheduler)(f: Seq[Sample] => R): Observable[R] =
       Observable create { observer =>
         val millis = d.toMillis
         val probes = Queue[Sample]()
 
-        op.timestamp.subscribe (
+        op.timestamp(s).subscribe (
           onError = { err => observer.onError(err) },
           onCompleted = { () => observer.onCompleted() },
           onNext = { value =>
@@ -93,23 +93,26 @@ object Operations {
     /**
      * Creates an Observable of the average over a certain period.
      */
-    def avg(d: Duration): Observable[Double] = aggregate(observable, d) { probes =>
-      val area = (0.0 /: probes.zip(probes.tail)) {
-        case (res, ((t1, s1), (t2, s2))) =>
-          res + (num.toDouble(s1) + num.toDouble(s2)) * (t2 - t1) / 2
+    def avg(d: Duration)(implicit s: Scheduler): Observable[Double] =
+      aggregate(observable, d, s) { probes =>
+	val area = (0.0 /: probes.zip(probes.tail)) {
+          case (res, ((t1, s1), (t2, s2))) =>
+            res + (num.toDouble(s1) + num.toDouble(s2)) * (t2 - t1) / 2
+	}
+	area / d.toMillis
       }
-      area / d.toMillis
-    }
 
     /**
      * Creates an Observable of the minimum over a certain period.
      */
-    def min(d: Duration): Observable[T] = aggregate(observable, d) { probes => probes.min(sampleOrd)._2 }
+    def min(d: Duration)(implicit s: Scheduler): Observable[T] =
+      aggregate(observable, d, s) { probes => probes.min(sampleOrd)._2 }
 
     /**
      * Creates an Observable of the maximum over a certain period.
      */
-    def max(d: Duration): Observable[T] = aggregate(observable, d) { probes => probes.max(sampleOrd)._2 }
+    def max(d: Duration)(implicit s: Scheduler): Observable[T] =
+      aggregate(observable, d, s) { probes => probes.max(sampleOrd)._2 }
 
     private def sampleOrd: Ordering[Sample] = num.on (_._2)
 
@@ -117,23 +120,24 @@ object Operations {
      * Create an Observable of the difference of the source observable over time.
      * @param unit TimeUnit to measure the time. Units not less than milliseconds are supported.
      */
-    def diff(unit: TimeUnit = TimeUnit.SECONDS): Observable[Double] = Observable create { observer =>
-      val mult: Double = 1.0 / TimeUnit.MILLISECONDS.convert(1, unit)
-      var prevSample: Option[Sample] = None
-      observable.timestamp.subscribe (
-        onError = { err => observer.onError(err) },
-        onCompleted = { () => observer.onCompleted() },
-        onNext = {
-          case curr@(t2, v2) =>
-            for ((t1, v1) <- prevSample) {
-              val dx = num.toDouble(num.minus(v2, v1))
-              val dt = (t2 - t1) * mult
-              observer.onNext(dx / dt)
-            }
-            prevSample = Some(curr)
-        }
-      )
-    }
+    def diff(unit: TimeUnit = TimeUnit.SECONDS)(implicit s: Scheduler): Observable[Double] =
+      Observable create { observer =>
+        val mult: Double = 1.0 / TimeUnit.MILLISECONDS.convert(1, unit)
+	var prevSample: Option[Sample] = None
+	observable.timestamp(s).subscribe (
+	  onError = { err => observer.onError(err) },
+	  onCompleted = { () => observer.onCompleted() },
+	  onNext = {
+	    case curr@(t2, v2) =>
+	      for ((t1, v1) <- prevSample) {
+		val dx = num.toDouble(num.minus(v2, v1))
+		val dt = (t2 - t1) * mult
+		observer.onNext(dx / dt)
+	      }
+	      prevSample = Some(curr)
+	  }
+	)
+      }
   }
 
   implicit class BooleanObservableOps(observable: Observable[Boolean]) extends Ops[Boolean] {
@@ -158,7 +162,8 @@ object Operations {
     /**
      * Creates an Observable that yields true iff observable stays true for a specified period.
      */
-    def always(d: Duration): Observable[Boolean] = aggregate(observable, d) (_ forall (_._2))
+    def always(d: Duration)(implicit s: Scheduler): Observable[Boolean] =
+      aggregate(observable, d, s) (_ forall (_._2))
 
     /**
      * Subscribe to observable with action executed only when the condition is true.
@@ -179,7 +184,7 @@ object Operations {
     /**
      * Create an Observable of the number of ticks of this ticker in duration.
      */
-    def count(d: Duration): Observable[Int] = aggregate(ticker, d) (_.size)
+    def count(d: Duration)(implicit s: Scheduler): Observable[Int] = aggregate(ticker, d, s) (_.size)
   }
 
   implicit class UnitObserverOps(val observer: Observer[Unit]) extends AnyVal {
@@ -190,4 +195,9 @@ object Operations {
    * Shorthand for creating const observables.
    */
   def const[T](value: T): Observable[T] = Observable items (value)
+
+  /**
+   * Implicit scheduler compatible with java timestamp implementation.
+   */
+  implicit lazy val immediateScheduler = schedulers.ImmediateScheduler()
 }

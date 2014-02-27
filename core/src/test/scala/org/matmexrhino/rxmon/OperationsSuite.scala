@@ -48,14 +48,13 @@ class OperationsSuite extends FunSuite {
     val step = 50.milliseconds
     val end = stop + step
     for (_ <- 1 to (end / step).toInt) {
-      Thread.sleep(step.toMillis) // Otherwise Observable.timestamp sees it too quickly, need to mock timestamp!
       scheduler.advanceTimeBy(step)
     }
     post(l.toList)
   }
 
   test("binop") {
-    implicit val stop = 1.seconds
+    implicit val stop = 1100.milliseconds
     withScheduler { scheduler =>
       val X, Y: Observable[Long] = Observable.interval(100.milliseconds, scheduler)
       X * Y
@@ -71,7 +70,7 @@ class OperationsSuite extends FunSuite {
     implicit val stop = 1.seconds
     withScheduler { scheduler =>
       val X: Observable[Double] = Observable.interval(50.milliseconds, scheduler) map (x => math.sin(x.toDouble))
-      (X > -1 && X < 1).always(200.milliseconds)
+      (X > -1 && X < 1).always(200.milliseconds)(scheduler)
     } { samples =>
       assertTrue(samples.nonEmpty && !samples.exists(!_))
     }
@@ -82,7 +81,7 @@ class OperationsSuite extends FunSuite {
     withScheduler { scheduler =>
       val X: Observable[Boolean] = Observable.interval(50.milliseconds, scheduler) map (_ % 2 == 1)
       val t = 200.milliseconds
-      (!X.always(t) && !(!X).always(t)).always(t * 2)
+      (!X.always(t)(scheduler) && !(!X).always(t)).always(t * 2)(scheduler)
     } { samples =>
       // First samples are when things haven't stabilized.
       val drop = samples dropWhile (!_)
@@ -97,16 +96,16 @@ class OperationsSuite extends FunSuite {
     }
     def X(scheduler: TestScheduler): Observable[Long] = Observable.interval(150.milliseconds, scheduler)
 
-    withScheduler { scheduler => X(scheduler).avg(400.milliseconds) } (check(_))
-    withScheduler { scheduler => X(scheduler).max(400.milliseconds) } (check(_))
-    withScheduler { scheduler => X(scheduler).min(400.milliseconds) } (check(_))
+    withScheduler { scheduler => X(scheduler).avg(400.milliseconds)(scheduler) } (check(_))
+    withScheduler { scheduler => X(scheduler).max(400.milliseconds)(scheduler) } (check(_))
+    withScheduler { scheduler => X(scheduler).min(400.milliseconds)(scheduler) } (check(_))
   }
 
   test("avg") {
     implicit val stop = 1.seconds
     withScheduler { scheduler =>
       val X: Observable[Double] = Observable.interval(200.milliseconds, scheduler) map (x => (2*(x % 2) - 1).toDouble)
-      X.avg(400.milliseconds)
+      X.avg(400.milliseconds)(scheduler)
     } { samples =>
       assertTrue(samples.nonEmpty && samples.forall(x => math.abs(x) < 0.0001))
     }
@@ -116,9 +115,9 @@ class OperationsSuite extends FunSuite {
     implicit val stop = 1.seconds
     withScheduler { scheduler =>
       val X: Observable[Unit] = Observable.interval(100.milliseconds, scheduler) map (_ => ())
-      X.count(400.milliseconds)
+      X.count(400.milliseconds)(scheduler)
     } { samples =>
-      assertTrue(samples == List(1, 2, 3, 4, 4, 4, 4, 4, 4))
+      assertTrue(samples == List(1, 2, 3, 4, 5, 5, 5, 5, 5))
     }
   }
 
@@ -126,9 +125,9 @@ class OperationsSuite extends FunSuite {
     implicit val stop = 1.seconds
     withScheduler { scheduler =>
       val X: Observable[Long] = Observable.interval(100.milliseconds, scheduler)
-      X.diff()
+      X.diff()(scheduler)
     } { samples =>
-      assertTrue(samples.nonEmpty && samples.forall(x => x > 8.0 && x < 12.0))
+      assertTrue(samples.nonEmpty && samples.forall(x => math.abs(x - 10.0)  < 0.0001))
     }
   }
 }
