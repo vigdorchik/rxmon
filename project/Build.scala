@@ -47,4 +47,13 @@ object RxmonBuild extends Build {
       )
     )
   )
+
+  lazy val benchmarks = Project (
+    id = "benchmarks",
+    base = file("benchmarks"),
+    settings = commonSettings ++ Seq (
+      publishArtifact := false
+    ),
+    dependencies = Seq(core)
+  )
 }
