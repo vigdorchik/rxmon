@@ -19,7 +19,7 @@ import scala.reflect.ClassTag
 import rx.lang.scala.Observable
 import scala.collection.mutable.ListBuffer
 import akka.testkit.TestProbe
-import akka.actor.{ PoisonPill, ActorRef }
+import akka.actor.ActorRef
 
 case object Done
 // This is done just for the test. In prod you probably don't want your observables to escape.
@@ -31,7 +31,6 @@ class TestRegistry[T](implicit tag: ClassTag[T]) extends Registry {
   override def receive  = super.receive orElse {
     case Done =>
       sender ! buff.toList
-      self ! PoisonPill
   }
 }
 
