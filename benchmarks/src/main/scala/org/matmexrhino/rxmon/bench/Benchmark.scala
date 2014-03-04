@@ -27,9 +27,9 @@ object Config {
 object Benchmark extends App {
   import Config._
 
-  var start: Long = _
-
   class BenchRegistry extends Registry {
+    val start = System.currentTimeMillis
+
     val leaves = 1 to nLeaves map (x => register[Int](x.toString))
     val root = leaves reduce (_ + _)
 
@@ -46,7 +46,6 @@ object Benchmark extends App {
 
     def receive = {
       case EntriesResponse(targets) =>
-	start = System.currentTimeMillis
 	for (i <- 1 to nSends; (_, t) <- targets) t ! i
     }
   }
