@@ -32,7 +32,7 @@ object RxmonBuild extends Build {
   lazy val rxmon = Project (
     id = "rxmon",
     base = file("."),
-    aggregate = Seq(core)
+    aggregate = Seq(core, benchmarks)
   )
 
   lazy val core = Project (
@@ -41,7 +41,7 @@ object RxmonBuild extends Build {
     settings = commonSettings ++ Seq (
       name := "rxmon-core",
       libraryDependencies ++= Seq(
-	"com.netflix.rxjava" % "rxjava-scala" % "0.17.0-RC6",
+	"com.netflix.rxjava" % "rxjava-scala" % "0.17.0-RC7",
 	"com.typesafe.akka" %% "akka-actor" % "2.3.0",
 	"com.typesafe.akka" %% "akka-testkit" % "2.3.0" % "test"
       )

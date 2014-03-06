@@ -28,10 +28,10 @@ object Operations {
       if (lop eq rop)
         lop.map(x => f(x, x))
       else
-        lop combineLatest rop map f.tupled
+        lop combineLatest (rop, f)
 
     def aggregate[R](op: Observable[T], d: Duration, s: Scheduler)(f: Seq[Sample] => R): Observable[R] =
-      Observable create { observer =>
+      Observable { observer =>
         val millis = d.toMillis
         val probes = Queue[Sample]()
 
@@ -121,7 +121,7 @@ object Operations {
      * @param unit TimeUnit to measure the time. Units not less than milliseconds are supported.
      */
     def diff(unit: TimeUnit = TimeUnit.SECONDS)(implicit s: Scheduler): Observable[Double] =
-      Observable create { observer =>
+      Observable { observer =>
         val mult: Double = 1.0 / TimeUnit.MILLISECONDS.convert(1, unit)
 	var prevSample: Option[Sample] = None
 	observable.timestamp(s).subscribe (

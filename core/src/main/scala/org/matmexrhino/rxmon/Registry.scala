@@ -37,7 +37,7 @@ abstract class Registry extends Actor {
   }
 
   protected def register[T: ClassTag](name: String): Observable[T] =
-    Observable create { observer =>
+    Observable { observer =>
       val tag = implicitly[ClassTag[T]]
       val monitor = context.actorOf(Props(new Monitor[T](observer, tag)), name)
       monitors = monitors + (name -> monitor)
