@@ -15,11 +15,13 @@
 
 import sbt._
 import sbt.Keys._
+import bintray.Plugin.bintraySettings
+import bintray.Keys._
 
 object RxmonBuild extends Build {
   lazy val commonSettings = Defaults.defaultSettings ++ Seq (
     organization := "org.matmexrhino",
-    version := "0.2.0",
+    version := "0.2.1",
     scalaVersion := "2.10.3",
     resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
     libraryDependencies ++= Seq(
@@ -29,31 +31,38 @@ object RxmonBuild extends Build {
     parallelExecution in Test := false
   )
 
+  lazy val noPublishSettings = commonSettings ++ Seq (
+    publishArtifact := false
+  )
+
   lazy val rxmon = Project (
     id = "rxmon",
     base = file("."),
-    aggregate = Seq(core, benchmarks)
+    aggregate = Seq(core, benchmarks),
+    settings = noPublishSettings
   )
 
   lazy val core = Project (
     id = "core",
     base = file("core"),
-    settings = commonSettings ++ Seq (
-      name := "rxmon-core",
+    settings = commonSettings ++ bintraySettings ++ Seq (
+      name := "rxmon",
       libraryDependencies ++= Seq(
-	"com.netflix.rxjava" % "rxjava-scala" % "0.17.0-RC7",
+	"com.netflix.rxjava" % "rxjava-scala" % "0.17.0",
 	"com.typesafe.akka" %% "akka-actor" % "2.3.0",
 	"com.typesafe.akka" %% "akka-testkit" % "2.3.0" % "test"
-      )
+      ),
+      // bintray
+      repository in bintray := "maven",
+      licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html")),
+      bintrayOrganization in bintray := None
     )
   )
 
   lazy val benchmarks = Project (
     id = "benchmarks",
     base = file("benchmarks"),
-    settings = commonSettings ++ Seq (
-      publishArtifact := false
-    ),
+    settings = noPublishSettings,
     dependencies = Seq(core)
   )
 }
