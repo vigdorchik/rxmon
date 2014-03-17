@@ -31,8 +31,6 @@ class BatchingSuite extends FunSuite {
   val group = List.iterate(gen, P - 1)(x => (x * gen) % P )
   assertEquals(P - 1, group.toSet.size)
 
-  def sendAll(target: ActorRef): Unit = for (i <- group) target ! i
-
   def doTest[T: ClassTag](batch: BatchContext => Batcher[_, _, _], expected: T) {
     implicit val system = ActorSystem("test")
     val client = TestProbe()
@@ -42,9 +40,9 @@ class BatchingSuite extends FunSuite {
 
     val c = BatchContext(d, monitor)
     val target = system.actorOf(Props(batch(c)))
-    sendAll(target)
+    for (i <- group) target ! i
+    target ! new AnyRef
 
-    client.expectNoMsg(d plus 100.milliseconds)
     client.send(registry, Done)
     val l = client.expectMsgClass(classOf[List[T]])
     assertEquals(List(expected), l)

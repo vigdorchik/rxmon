@@ -37,8 +37,8 @@ class RegistrySuite extends FunSuite {
     val monitor = Tester.getMonitor(registry, client)
 
     for (e <- l) monitor ! e
+    monitor ! new AnyRef
 
-    client.expectNoMsg(1.seconds)
     client.send(registry, Done)
     val l1 = client.expectMsgClass(classOf[List[T]])
     assertEquals(l, l1)

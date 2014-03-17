@@ -50,6 +50,7 @@ abstract class Registry extends Actor {
   private class Monitor[T](observer: Observer[T], val ct: ClassTag[T]) extends Actor with ReceiveBoxed[T] {
     def receive: Receive = {
       case boxedTag(v) => observer onNext v.asInstanceOf[T]
+      case x => observer onError new Exception(s"Unknown value received of class ${x.getClass}")
     }
   }
 }

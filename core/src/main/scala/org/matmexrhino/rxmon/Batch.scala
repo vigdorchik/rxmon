@@ -40,7 +40,7 @@ abstract class Batcher[From: ClassTag, Run, To](c: BatchContext) extends Actor w
 
   private var curr: Run = zero
 
-  private def send(target: ActorRef) {
+  private def send() {
     if (curr != zero) {
       target ! output(curr)
       curr = zero
@@ -48,11 +48,14 @@ abstract class Batcher[From: ClassTag, Run, To](c: BatchContext) extends Actor w
   }
 
   import scala.concurrent.ExecutionContext.Implicits.global // TODO: revisit execution context usage here.
-  context.system.scheduler.schedule(d, d)(send(target))
+  context.system.scheduler.schedule(d, d)(send())
 
   def receive: Receive = {
     case boxedTag(v) =>
       curr = aggregate(v, curr)
+    case x =>
+      send()
+      target ! x
   }
 }
 

@@ -20,17 +20,24 @@ import rx.lang.scala.Observable
 import scala.collection.mutable.ListBuffer
 import akka.testkit.TestProbe
 import akka.actor.ActorRef
+import scala.concurrent._
+import scala.util.Success
+import scala.concurrent.duration._
 
 case object Done
 // This is done just for the test. In prod you probably don't want your observables to escape.
 class TestRegistry[T](implicit tag: ClassTag[T]) extends Registry {
   val X: Observable[T] = register[T](Tester.id)
-  X.subscribe (buff += _)
+  val p = Promise[List[T]]
+  X.subscribe (
+    onNext = {v => buff += v},
+    onError = {e => p.complete(Success(buff.toList))}
+  )
 
   val buff = ListBuffer[T]()
   override def receive  = super.receive orElse {
     case Done =>
-      sender ! buff.toList
+      sender ! Await.result(p.future, 1.seconds)
   }
 }
 
