@@ -121,6 +121,18 @@ class OperationsSuite extends FunSuite {
     }
   }
 
+  test("watchdog") {
+    val interval = 300.milliseconds
+    val N = 11
+    implicit val stop = interval * N
+    withScheduler { scheduler =>
+      val X: Observable[Unit] = Observable.interval(interval, scheduler) map (_ => ())
+      X.watchdog(interval/2)(scheduler)
+    } { samples =>
+      assertEquals(N - 1, samples.size) // Watchdog starts ticking after a delay.
+    }
+  }
+
   test("diff") {
     implicit val stop = 1.seconds
     withScheduler { scheduler =>

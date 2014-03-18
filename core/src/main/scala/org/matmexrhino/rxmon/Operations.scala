@@ -185,6 +185,15 @@ object Operations {
      * Create an Observable of the number of ticks of this ticker in duration.
      */
     def count(d: Duration)(implicit s: Scheduler): Observable[Int] = aggregate(ticker, d, s) (_.size)
+
+    /**
+     * Create an Observable emitting values when source Observable doesn't tick
+     * for a specified duration.
+     */
+    def watchdog(d: Duration)(implicit s: Scheduler): Observable[Unit] = {
+      val interval = Observable.interval(d, s) throttleFirst (d/2, s)
+      interval merge ticker.map(_ => -1L) sample (d, s) filter (_ > 0) map (_ => ())
+    }
   }
 
   implicit class UnitObserverOps(val observer: Observer[Unit]) extends AnyVal {

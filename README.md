@@ -20,6 +20,8 @@ The defined combinators, that can be used to construct the final monitored Obser
 
 * <b>count</b> the number of ticks of <i>Unit</i> <i>Observable</i>.
 
+* <b>watchdog</b> <i>Unit</i> <i>Observable</i> ticking when the source <i>Unit</i> <i>Observable</i> doesn't tick for a specified duration.
+
 ```Scala
 import org.matmexrhino.rxmon._
 import Monitoring._
