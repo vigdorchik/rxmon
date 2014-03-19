@@ -187,12 +187,13 @@ object Operations {
     def count(d: Duration)(implicit s: Scheduler): Observable[Int] = aggregate(ticker, d, s) (_.size)
 
     /**
-     * Create an Observable emitting values when source Observable doesn't tick
+     * Create an Observable emitting true when source Observable doesn't tick
      * for a specified duration.
      */
-    def watchdog(d: Duration)(implicit s: Scheduler): Observable[Unit] = {
-      val interval = Observable.interval(d, s) throttleFirst (d/2, s)
-      interval merge ticker.map(_ => -1L) sample (d, s) filter (_ > 0) map (_ => ())
+    def watchdog(d: Duration)(implicit s: Scheduler): Observable[Boolean] = {
+      val m = Observable.interval(d, s) drop 1 merge ticker.map(_ => -1L)
+      val w = m window (d, s) map (_ take 1)
+      w.flatten map (_ != -1L)
     }
   }
 

@@ -123,13 +123,14 @@ class OperationsSuite extends FunSuite {
 
   test("watchdog") {
     val interval = 300.milliseconds
-    val N = 11
+    val N = 33
     implicit val stop = interval * N
     withScheduler { scheduler =>
-      val X: Observable[Unit] = Observable.interval(interval, scheduler) map (_ => ())
-      X.watchdog(interval/2)(scheduler)
+      val X: Observable[Unit] = Observable.interval(interval * 2, scheduler) throttleFirst(interval/2, scheduler) map (_ => ())
+      X.watchdog(interval)(scheduler)
     } { samples =>
-      assertEquals(N - 1, samples.size) // Watchdog starts ticking after a delay.
+      assertEquals(N - 2, samples.size)
+      for ((x, y) <- samples zip samples.tail) assertTrue (x != y)
     }
   }
 
