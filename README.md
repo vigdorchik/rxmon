@@ -18,9 +18,9 @@ The defined combinators, that can be used to construct the final monitored Obser
 
 * <b>always</b> for <i>Boolean</i> <i>Observable</i>s that yields true only if its operand observable is true during parameter <i>Duration</i>.
 
-* <b>count</b> the number of ticks of <i>Unit</i> <i>Observable</i>.
+* <b>count</b> the number of ticks of any <i>Observable</i>.
 
-* <b>watchdog</b> <i>Unit</i> <i>Observable</i> ticking when the source <i>Unit</i> <i>Observable</i> doesn't tick for a specified duration.
+* <b>watchdog</b> <i>Boolean</i> <i>Observable</i> emitting true when the source <i>Observable</i> doesn't produce values for a specified duration.
 
 ```Scala
 import org.matmexrhino.rxmon._

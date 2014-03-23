@@ -114,7 +114,7 @@ class OperationsSuite extends FunSuite {
   test("count") {
     implicit val stop = 1.seconds
     withScheduler { scheduler =>
-      val X: Observable[Unit] = Observable.interval(100.milliseconds, scheduler) map (_ => ())
+      val X: Observable[Long] = Observable.interval(100.milliseconds, scheduler)
       X.count(400.milliseconds)(scheduler)
     } { samples =>
       assertTrue(samples == List(1, 2, 3, 4, 5, 5, 5, 5, 5))
@@ -126,7 +126,7 @@ class OperationsSuite extends FunSuite {
     val N = 33
     implicit val stop = interval * N
     withScheduler { scheduler =>
-      val X: Observable[Unit] = Observable.interval(interval * 2, scheduler) throttleFirst(interval/2, scheduler) map (_ => ())
+      val X: Observable[Long] = Observable.interval(interval * 2, scheduler) throttleFirst(interval/2, scheduler)
       X.watchdog(interval)(scheduler)
     } { samples =>
       assertEquals(N - 2, samples.size)

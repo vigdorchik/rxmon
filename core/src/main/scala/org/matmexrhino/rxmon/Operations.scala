@@ -180,7 +180,7 @@ object Operations {
     def unary_!(): Observable[Boolean] = observable map (!_)
   }
 
-  implicit class UnitObservableOps(ticker: Observable[Unit]) extends Ops[Unit] {
+  implicit class AnyObservableOps(ticker: Observable[Any]) extends Ops[Any] {
     /**
      * Create an Observable of the number of ticks of this ticker in duration.
      */
@@ -195,10 +195,6 @@ object Operations {
       val w = m window (d, s) map (_ take 1)
       w.flatten map (_ != -1L)
     }
-  }
-
-  implicit class UnitObserverOps(val observer: Observer[Unit]) extends AnyVal {
-    def tick(): Unit = observer onNext ()
   }
 
   /*
