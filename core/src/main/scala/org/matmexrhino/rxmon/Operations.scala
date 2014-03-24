@@ -14,10 +14,9 @@
  * limitations under the License. */
 package org.maxmexrhino.rxmon
 
-import scala.collection.mutable.Queue
 import scala.concurrent.duration._
 import scala.math.{Numeric, Ordering}
-import rx.lang.scala.{Observable, Observer, Scheduler, schedulers}
+import rx.lang.scala._
 import java.util.concurrent.TimeUnit
 
 object Operations {
@@ -33,19 +32,19 @@ object Operations {
     def aggregate[R](op: Observable[T], d: Duration, s: Scheduler)(f: Seq[Sample] => R): Observable[R] =
       Observable { observer =>
         val millis = d.toMillis
-        val probes = Queue[Sample]()
+        val probes = new util.RoundRobbin[Sample]()
 
         op.timestamp(s).subscribe (
           onError = { err => observer.onError(err) },
           onCompleted = { () => observer.onCompleted() },
           onNext = { value =>
             val (now, _) = value
-            probes enqueue value
             val start = now - millis
-            probes dequeueAll {
+            probes dropWhile {
               case (ts, _) => ts < start
             }
-            observer onNext f(probes)
+            probes addLast value
+            observer onNext f(probes.sequence)
           }
         )
       }

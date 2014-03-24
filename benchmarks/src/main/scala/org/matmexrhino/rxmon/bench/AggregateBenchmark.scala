@@ -56,10 +56,7 @@ object AggregateBenchmark extends App {
     def receive = {
       case EntriesResponse(targets) =>
 	val target = targets(srcName)
-	for (i <- 1 to era) {
-	  for (j <- 1 to rate)
-	    target ! (i * j)
-	}
+	for (i <- 1 to era; j <- 1 to rate) target ! (i * j)
     }
   }
 
