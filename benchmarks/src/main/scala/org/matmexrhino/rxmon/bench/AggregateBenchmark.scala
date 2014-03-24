@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Eugene Vigdorchik.
+ * Copyright 2013-2014 Eugene Vigdorchik.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,26 +17,35 @@ package bench
 
 import Operations._
 import akka.actor._
+import scala.concurrent.duration._
+import rx.lang.scala.schedulers.TestScheduler
 
-object Config {
-  val nLeaves = 10
-  val nSends = 1000000
-  val sum = nLeaves * nSends
+object AggregateConfig {
+  val srcName = "X"
+  val window = 10
+  val era = 1000
+  val rate = 100
+  val N = era * rate
 }
 
-object Benchmark extends App {
-  import Config._
+object AggregateBenchmark extends App {
+  import AggregateConfig._
 
-  class BenchRegistry extends Registry {
+  class MyRegistry(s: TestScheduler) extends Registry {
     val start = System.currentTimeMillis
 
-    val leaves = 1 to nLeaves map (x => register[Int](x.toString))
-    val root = leaves reduce (_ + _)
+    val src = register[Int](srcName)
+    val m = src.max(window.seconds)(s)
 
-    root subscribe { x =>
-      if (x == sum) {
+    var t = 0
+    m subscribe { x =>
+      t += 1
+      if (x == N) {
 	println(s"${System.currentTimeMillis - start} milliseconds elapsed.")
 	context.system.shutdown()
+      } else if (t == rate) {
+	t = 0
+	s advanceTimeBy 1.seconds
       }
     }
   }
@@ -46,13 +55,18 @@ object Benchmark extends App {
 
     def receive = {
       case EntriesResponse(targets) =>
-	for (i <- 1 to nSends; (_, t) <- targets) t ! i
+	val target = targets(srcName)
+	for (i <- 1 to era) {
+	  for (j <- 1 to rate)
+	    target ! (i * j)
+	}
     }
   }
 
   override def main(args: Array[String]) {
     val system = ActorSystem()
-    val registry = system.actorOf(Props(classOf[BenchRegistry]))
+    val s = TestScheduler()
+    val registry = system.actorOf(Props(classOf[MyRegistry], s))
     system.actorOf(Props(classOf[Send], registry))
   }
 }
