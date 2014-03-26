@@ -22,7 +22,7 @@ object RxmonBuild extends Build {
   lazy val commonSettings = Defaults.defaultSettings ++ Seq (
     organization := "org.matmexrhino",
     version := "0.2.1",
-    scalaVersion := "2.10.3",
+    scalaVersion := "2.10.4",
     resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
     libraryDependencies ++= Seq(
 	"org.scalatest" %% "scalatest" % "1.9.1" % "test",
@@ -48,9 +48,9 @@ object RxmonBuild extends Build {
     settings = commonSettings ++ bintraySettings ++ Seq (
       name := "rxmon",
       libraryDependencies ++= Seq(
-	"com.netflix.rxjava" % "rxjava-scala" % "0.17.1",
-	"com.typesafe.akka" %% "akka-actor" % "2.3.0",
-	"com.typesafe.akka" %% "akka-testkit" % "2.3.0" % "test"
+	"com.netflix.rxjava" % "rxjava-scala" % "0.17.2",
+	"com.typesafe.akka" %% "akka-actor" % "2.3.1",
+	"com.typesafe.akka" %% "akka-testkit" % "2.3.1" % "test"
       ),
       // bintray
       repository in bintray := "maven",
