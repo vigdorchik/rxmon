@@ -23,8 +23,8 @@ import rx.lang.scala.schedulers.TestScheduler
 object AggregateConfig {
   val srcName = "X"
   val window = 10
-  val era = 1000
-  val rate = 100
+  val era = 100
+  val rate = 1000
   val N = era * rate
 }
 
