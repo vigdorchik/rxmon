@@ -14,39 +14,61 @@
  * limitations under the License. */
 package org.maxmexrhino.rxmon
 
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import akka.actor._
 import akka.dispatch._
 
-/**
- * Sends of this object result in sending the size of the message queue to the
- * specified target.
- */
-case object QueueSize
+object QueueMessages {
+  trait QueueMessage
+
+  /**
+   * Sends of this object result in sending the size of the message queue to the
+   * specified target.
+   */
+  case object Size extends QueueMessage
+
+  /**
+   * Sends of this object result in sending the number of enqueues to the specified target.
+   */
+  case object Enqueues extends QueueMessage
+
+  /**
+   * Sends of this object result in sending the number of dequeues to the specified target.
+   */
+  case object Dequeues extends QueueMessage
+}
 
 /**
  * Mixin this trait in order to get the queue tracking its enqueues and dequeues
- * and reporting its size on demand. It's a good idea to have bare Integers
+ * and reporting its size on demand. It's a good idea to have bare Longs
  * prioritized over other messages, but that's not obligatory.
  */
-trait QueueSizeReporter { self: MessageQueue =>
+trait QueueSizeReporter extends MessageQueue {
+  import QueueMessages._
+
   def system: ActorSystem
 
-  val messagesCount = new AtomicInteger
+  val enqueues, dequeues = new AtomicLong
 
-  override def enqueue(receiver: ActorRef, handle: Envelope) {
-    val count = messagesCount.incrementAndGet()
+  abstract override def enqueue(receiver: ActorRef, handle: Envelope) {
+    val enqueuesCount = enqueues.incrementAndGet()
+    def dequeuesCount = dequeues.get
+
     handle match {
-      case Envelope(QueueSize, sender) =>
-	self.enqueue(receiver, Envelope(count, sender, system))
+      case Envelope(Size, sender) =>
+	super.enqueue(receiver, Envelope(enqueuesCount - dequeuesCount, sender, system))
+      case Envelope(Enqueues, sender) =>
+	super.enqueue(receiver, Envelope(enqueuesCount, sender, system))
+      case Envelope(Dequeues, sender) =>
+	super.enqueue(receiver, Envelope(dequeuesCount, sender, system))
       case _ =>
-	self.enqueue(receiver, handle)
+	super.enqueue(receiver, handle)
     }
   }
 
-  override def dequeue(): Envelope = {
-    val x = self.dequeue()
-    if (x ne null) messagesCount.decrementAndGet()
+  abstract override def dequeue(): Envelope = {
+    val x = super.dequeue()
+    if (x ne null) dequeues.incrementAndGet()
     x
   }
 }
