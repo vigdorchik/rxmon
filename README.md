@@ -58,6 +58,33 @@ The following batching modes are supported:
 * <b>ever</b>, <b>never</b> for <i>Boolean</i> variables.
 * <b>tick</b> counts the number of ticks of <i>Unit</i> variable, and outputs <i>Int</i>.
 
+## Monitoring message queue
+
+In addition to user-defined metrics, it's possible to monitor the health of akka itself:
+
+```Scala
+import org.matmexrhino.rxmon.QueueMessages._
+
+target ! Size     // sends the current size of the message queue to target.
+target ! Enqueues // sends the number of enqueues in the queue to target.
+target ! Dequeues // sends the number of dequeues in the queue to target.
+```
+
+In order to be able to transform those messages into numbers, one has to declare the mailbox type and
+register it:
+
+```Scala
+class MyMailbox(settings: ActorSystem.Settings, config: Config) extends MailboxType {
+  def create(owner: Option[ActorRef], system: Option[ActorSystem]) = new MyMessageQueue(system.get)
+}
+class MyMessageQueue(val system: ActorSystem) extends UnboundedMailbox.MessageQueue with QueueSizeReporter
+```
+```
+akka.actor.default-mailbox {
+  mailbox-type = MyMailbox
+}
+```
+
 ## Referencing
 
 This project is published on *[Bintray](https://bintray.com/)*.
@@ -67,7 +94,7 @@ To reference from sbt:
 ```Scala
 resolvers += "bintray-vigdorchik" at "http://dl.bintray.com/vigdorchik/maven"
 
-libraryDependencies += "org.matmexrhino" %% "rxmon" % "0.2.0"
+libraryDependencies += "org.matmexrhino" %% "rxmon" % "0.3.0"
 ```
 
 To reference from maven:

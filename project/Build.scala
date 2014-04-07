@@ -21,7 +21,7 @@ import bintray.Keys._
 object RxmonBuild extends Build {
   lazy val commonSettings = Defaults.defaultSettings ++ Seq (
     organization := "org.matmexrhino",
-    version := "0.2.1",
+    version := "0.3.0",
     scalaVersion := "2.10.4",
     resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
     libraryDependencies ++= Seq(
