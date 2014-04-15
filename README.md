@@ -14,7 +14,7 @@ The defined combinators, that can be used to construct the final monitored Obser
 
 * <b>max</b>, <b>min</b>, <b>avg</b> over a specified <i>Duration</i> for <i>Numeric</i> <i>Observable</i>s.
 
-* <b>diff</b> giving an <i>Observable</i> of relative differences for <i>Numeric</i> <i>Observable</i>s. This is used to model variable growth.
+* <b>drv</b> giving an <i>Observable</i> of the derivative for <i>Numeric</i> <i>Observable</i>s. This is used to model variable growth.
 
 * <b>always</b> for <i>Boolean</i> <i>Observable</i>s that yields true only if its operand observable is true during parameter <i>Duration</i>.
 

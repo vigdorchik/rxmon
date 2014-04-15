@@ -116,10 +116,10 @@ object Operations {
     private def sampleOrd: Ordering[Sample] = num.on (_._2)
 
     /**
-     * Create an Observable of the difference of the source observable over time.
+     * Create an Observable of the derivative of the source observable over time.
      * @param unit TimeUnit to measure the time. Units not less than milliseconds are supported.
      */
-    def diff(unit: TimeUnit = TimeUnit.SECONDS)(implicit s: Scheduler): Observable[Double] =
+    def drv(unit: TimeUnit = TimeUnit.SECONDS)(implicit s: Scheduler): Observable[Double] =
       Observable { observer =>
         val mult: Double = 1.0 / TimeUnit.MILLISECONDS.convert(1, unit)
 	var prevSample: Option[Sample] = None

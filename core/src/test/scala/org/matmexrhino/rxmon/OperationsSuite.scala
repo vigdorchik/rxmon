@@ -134,11 +134,11 @@ class OperationsSuite extends FunSuite {
     }
   }
 
-  test("diff") {
+  test("drv") {
     implicit val stop = 1.seconds
     withScheduler { scheduler =>
       val X: Observable[Long] = Observable.interval(100.milliseconds, scheduler)
-      X.diff()(scheduler)
+      X.drv()(scheduler)
     } { samples =>
       assertTrue(samples.nonEmpty && samples.forall(x => math.abs(x - 10.0)  < 0.0001))
     }
