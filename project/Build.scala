@@ -48,7 +48,7 @@ object RxmonBuild extends Build {
     settings = commonSettings ++ bintraySettings ++ Seq (
       name := "rxmon",
       libraryDependencies ++= Seq(
-	"com.netflix.rxjava" % "rxjava-scala" % "0.17.4",
+	"com.netflix.rxjava" % "rxjava-scala" % "0.18.1",
 	"com.typesafe.akka" %% "akka-actor" % "2.3.2",
 	"com.typesafe.akka" %% "akka-testkit" % "2.3.2" % "test"
       ),
