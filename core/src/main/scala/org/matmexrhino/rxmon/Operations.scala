@@ -165,6 +165,12 @@ object Operations {
       aggregate(observable, d, s) (_ forall (_._2))
 
     /**
+     * Creates an Observable that yields true iff observable stays false for a specified period.
+     */
+    def never(d: Duration)(implicit s: Scheduler): Observable[Boolean] =
+      aggregate(observable, d, s) (_ forall (!_._2))
+
+    /**
      * Subscribe to observable with action executed only when the condition is true.
      */
     def whenTrue(action:  () => Unit): Unit = observable.subscribe (if (_) action())
@@ -173,7 +179,7 @@ object Operations {
      * Negate the given observable.
      * For example, jittering can be expressed as follows:
      * {{{
-     *   (!X.always(t1) && !(!X).always(t1)).always(t2)
+     *   (!X.always(t1) && !X.never(t1)).always(t2)
      * }}}
      */
     def unary_!(): Observable[Boolean] = observable map (!_)

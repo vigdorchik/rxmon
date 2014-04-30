@@ -81,7 +81,7 @@ class OperationsSuite extends FunSuite {
     withScheduler { scheduler =>
       val X: Observable[Boolean] = Observable.interval(50.milliseconds, scheduler) map (_ % 2 == 1)
       val t = 200.milliseconds
-      (!X.always(t)(scheduler) && !(!X).always(t)).always(t * 2)(scheduler)
+      (!X.always(t)(scheduler) && !X.never(t)).always(t * 2)(scheduler)
     } { samples =>
       // First samples are when things haven't stabilized.
       val drop = samples dropWhile (!_)

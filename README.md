@@ -16,7 +16,7 @@ The defined combinators, that can be used to construct the final monitored Obser
 
 * <b>drv</b> giving an <i>Observable</i> of the derivative for <i>Numeric</i> <i>Observable</i>s. This is used to model variable growth.
 
-* <b>always</b> for <i>Boolean</i> <i>Observable</i>s that yields true only if its operand observable is true during parameter <i>Duration</i>.
+* <b>always, never</b> for <i>Boolean</i> <i>Observable</i>s that yield true only if their operand observable is true or false respectively during parameter <i>Duration</i>.
 
 * <b>count</b> the number of ticks of any <i>Observable</i>.
 
