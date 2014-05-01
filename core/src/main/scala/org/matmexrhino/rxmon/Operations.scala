@@ -21,20 +21,21 @@ import java.util.concurrent.TimeUnit
 
 object Operations {
   private[Operations] trait Ops[T] {
-    type Sample = (Long, T)
+    def observable: Observable[T]
 
-    def binop[T, R](lop: Observable[T], rop: Observable[T], f: (T, T) => R): Observable[R] =
-      if (lop eq rop)
-        lop.map(x => f(x, x))
+    def binop[R](rop: Observable[T], f: (T, T) => R): Observable[R] =
+      if (observable eq rop)
+        observable map (x => f(x, x))
       else
-        lop combineLatest (rop, f)
+        observable combineLatest (rop, f)
 
-    def aggregate[R](op: Observable[T], d: Duration, s: Scheduler)(f: Seq[Sample] => R): Observable[R] =
+    type Sample = (Long, T)
+    def aggregate[R](d: Duration, s: Scheduler)(f: Seq[Sample] => R): Observable[R] =
       Observable { observer =>
         val millis = d.toMillis
         val probes = new util.RoundRobbin[Sample]()
 
-        op.timestamp(s).subscribe (
+        observable.timestamp(s).subscribe (
           onError = { err => observer.onError(err) },
           onCompleted = { () => observer.onCompleted() },
           onNext = { value =>
@@ -50,42 +51,37 @@ object Operations {
       }
   }
 
-  implicit class NumericObservableOps[T: Numeric](observable: Observable[T]) extends Ops[T] {
+  implicit class NumericObservableOps[T: Numeric](val observable: Observable[T]) extends Ops[T] {
     lazy val num = implicitly[Numeric[T]]
 
     /**
      * Creates an Observable of the sum of 2 observables.
      */
-    def +(that: Observable[T]): Observable[T] =
-      binop(observable, that, num.plus _)
+    def +(that: Observable[T]): Observable[T] = binop(that, num.plus _)
     def +[V <% T](v: V): Observable[T] = observable map (num.plus(_, v))
 
     /**
      * Creates an Observable of the difference of 2 observables.
      */
-    def -(that: Observable[T]): Observable[T] =
-      binop(observable, that, num.minus _)
+    def -(that: Observable[T]): Observable[T] = binop(that, num.minus _)
     def -[V <% T](v: V): Observable[T] = observable map (num.minus(_, v))
 
     /**
      * Creates an Observable of the product of 2 observables.
      */
-    def *(that: Observable[T]): Observable[T] =
-      binop(observable, that, num.times _)
+    def *(that: Observable[T]): Observable[T] = binop(that, num.times _)
     def *[V <% T](v: V): Observable[T] = observable map (num.times(_, v))
 
     /**
      * Creates an Observable of the fact that (observable < that).
      */
-    def <(that: Observable[T]): Observable[Boolean] =
-      binop(observable, that, num.lt _)
+    def <(that: Observable[T]): Observable[Boolean] = binop(that, num.lt _)
     def <[V <% T](v: V): Observable[Boolean] = observable map (num.lt(_, v))
 
     /**
      * Creates an Observable of the fact that (observable > that).
      */
-    def >(that: Observable[T]): Observable[Boolean] =
-      binop(observable, that, num.gt _)
+    def >(that: Observable[T]): Observable[Boolean] = binop(that, num.gt _)
     def >[V <% T](v: V): Observable[Boolean] = observable map (num.gt(_, v))
 
 
@@ -93,7 +89,7 @@ object Operations {
      * Creates an Observable of the average over a certain period.
      */
     def avg(d: Duration)(implicit s: Scheduler): Observable[Double] =
-      aggregate(observable, d, s) { probes =>
+      aggregate(d, s) { probes =>
 	val area = (0.0 /: probes.zip(probes.tail)) {
           case (res, ((t1, s1), (t2, s2))) =>
             res + (num.toDouble(s1) + num.toDouble(s2)) * (t2 - t1) / 2
@@ -105,13 +101,13 @@ object Operations {
      * Creates an Observable of the minimum over a certain period.
      */
     def min(d: Duration)(implicit s: Scheduler): Observable[T] =
-      aggregate(observable, d, s) { probes => probes.min(sampleOrd)._2 }
+      aggregate(d, s) { probes => probes.min(sampleOrd)._2 }
 
     /**
      * Creates an Observable of the maximum over a certain period.
      */
     def max(d: Duration)(implicit s: Scheduler): Observable[T] =
-      aggregate(observable, d, s) { probes => probes.max(sampleOrd)._2 }
+      aggregate(d, s) { probes => probes.max(sampleOrd)._2 }
 
     private def sampleOrd: Ordering[Sample] = num.on (_._2)
 
@@ -139,36 +135,31 @@ object Operations {
       }
   }
 
-  implicit class BooleanObservableOps(observable: Observable[Boolean]) extends Ops[Boolean] {
+  implicit class BooleanObservableOps(val observable: Observable[Boolean]) extends Ops[Boolean] {
     /**
      * Creates an Observable that yields true iff both arguments are true.
      */
-    def &&(that: Observable[Boolean]): Observable[Boolean] =
-      binop[Boolean, Boolean](observable, that, (_ && _))
+    def &&(that: Observable[Boolean]): Observable[Boolean] = binop[Boolean](that, (_ && _))
 
     /**
      * Creates an Observable that yields true iff any of its two argumenta is true.
      */
-    def ||(that: Observable[Boolean]): Observable[Boolean] =
-      binop[Boolean, Boolean](observable, that, (_ || _))
+    def ||(that: Observable[Boolean]): Observable[Boolean] = binop[Boolean](that, (_ || _))
 
     /**
      * Creates an Observable that yields true iff arguments are not the same.
      */
-    def ^(that: Observable[Boolean]): Observable[Boolean] =
-      binop[Boolean, Boolean](observable, that, (_ ^ _))
+    def ^(that: Observable[Boolean]): Observable[Boolean] = binop[Boolean](that, (_ ^ _))
 
     /**
      * Creates an Observable that yields true iff observable stays true for a specified period.
      */
-    def always(d: Duration)(implicit s: Scheduler): Observable[Boolean] =
-      aggregate(observable, d, s) (_ forall (_._2))
+    def always(d: Duration)(implicit s: Scheduler): Observable[Boolean] = aggregate(d, s) (_ forall (_._2))
 
     /**
      * Creates an Observable that yields true iff observable stays false for a specified period.
      */
-    def never(d: Duration)(implicit s: Scheduler): Observable[Boolean] =
-      aggregate(observable, d, s) (_ forall (!_._2))
+    def never(d: Duration)(implicit s: Scheduler): Observable[Boolean] = aggregate(d, s) (_ forall (!_._2))
 
     /**
      * Subscribe to observable with action executed only when the condition is true.
@@ -185,18 +176,18 @@ object Operations {
     def unary_!(): Observable[Boolean] = observable map (!_)
   }
 
-  implicit class AnyObservableOps(ticker: Observable[Any]) extends Ops[Any] {
+  implicit class AnyObservableOps(val observable: Observable[Any]) extends Ops[Any] {
     /**
      * Create an Observable of the number of ticks of this ticker in duration.
      */
-    def count(d: Duration)(implicit s: Scheduler): Observable[Int] = aggregate(ticker, d, s) (_.size)
+    def count(d: Duration)(implicit s: Scheduler): Observable[Int] = aggregate(d, s) (_.size)
 
     /**
      * Create an Observable emitting true when source Observable doesn't tick
      * for a specified duration.
      */
     def watchdog(d: Duration)(implicit s: Scheduler): Observable[Boolean] = {
-      val m = Observable.interval(d, s) drop 1 merge ticker.map(_ => -1L)
+      val m = Observable.interval(d, s) drop 1 merge observable.map(_ => -1L)
       val w = m window (d, s) map (_ take 1)
       w.flatten map (_ != -1L)
     }
