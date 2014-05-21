@@ -35,29 +35,43 @@ object RxmonBuild extends Build {
     publishArtifact := false
   )
 
+  lazy val publishSettings = commonSettings ++ bintraySettings ++ Seq (
+    repository in bintray := "maven",
+    licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html")),
+    bintrayOrganization in bintray := None
+  )
+
   lazy val rxmon = Project (
     id = "rxmon",
     base = file("."),
-    aggregate = Seq(core, benchmarks),
+    aggregate = Seq(core, akkamon, benchmarks),
     settings = noPublishSettings
   )
 
   lazy val core = Project (
     id = "core",
     base = file("core"),
-    settings = commonSettings ++ bintraySettings ++ Seq (
+    settings = publishSettings ++ Seq (
       name := "rxmon",
       libraryDependencies ++= Seq(
-	"com.netflix.rxjava" % "rxjava-scala" % "0.18.1",
-	"com.typesafe.akka" %% "akka-actor" % "2.3.2",
-	"com.typesafe.akka" %% "akka-testkit" % "2.3.2" % "test"
-      ),
-      // bintray
-      repository in bintray := "maven",
-      licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html")),
-      bintrayOrganization in bintray := None
+	"com.netflix.rxjava" % "rxjava-scala" % "0.18.3"
+      )
     )
   )
+
+  lazy val akkamon = Project (
+    id = "akkamon",
+    base = file("akkamon"),
+    settings = publishSettings ++ Seq (
+      name := "akkamon",
+      libraryDependencies ++= Seq (
+	"com.typesafe.akka" %% "akka-actor" % "2.3.2",
+	"com.typesafe.akka" %% "akka-testkit" % "2.3.2" % "test"
+      )
+    ),
+    dependencies = Seq(core)
+  )
+
 
   lazy val benchmarks = Project (
     id = "benchmarks",
