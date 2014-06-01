@@ -19,7 +19,7 @@ import bintray.Plugin.bintraySettings
 import bintray.Keys._
 
 object RxmonBuild extends Build {
-  lazy val commonSettings = Defaults.defaultSettings ++ Seq (
+  lazy val commonSettings = Defaults.buildCore ++ Seq (
     organization := "org.matmexrhino",
     version := "0.3.0",
     scalaVersion := "2.10.4",
@@ -54,7 +54,7 @@ object RxmonBuild extends Build {
     settings = publishSettings ++ Seq (
       name := "rxmon",
       libraryDependencies ++= Seq(
-	"com.netflix.rxjava" % "rxjava-scala" % "0.18.3"
+	"com.netflix.rxjava" % "rxjava-scala" % "0.18.4"
       )
     )
   )
@@ -65,8 +65,8 @@ object RxmonBuild extends Build {
     settings = publishSettings ++ Seq (
       name := "akkamon",
       libraryDependencies ++= Seq (
-	"com.typesafe.akka" %% "akka-actor" % "2.3.2",
-	"com.typesafe.akka" %% "akka-testkit" % "2.3.2" % "test"
+	"com.typesafe.akka" %% "akka-actor" % "2.3.3",
+	"com.typesafe.akka" %% "akka-testkit" % "2.3.3" % "test"
       )
     ),
     dependencies = Seq(core)
@@ -77,6 +77,6 @@ object RxmonBuild extends Build {
     id = "benchmarks",
     base = file("benchmarks"),
     settings = noPublishSettings,
-    dependencies = Seq(core)
+    dependencies = Seq(core, akkamon)
   )
 }
