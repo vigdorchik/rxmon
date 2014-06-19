@@ -30,10 +30,10 @@ class OperationsSuite extends FunSuite {
     val X: Observable[Int] = Observable.from(1 to 100)
     val F: Observable[Int] = X * X * 2 + 1
     def f(x: Int) = x * x * 2 + 1
-    assertEquals(X.toBlockingObservable.toList map f, F.toBlockingObservable.toList)
+    assertEquals(X.toBlocking.toList map f, F.toBlocking.toList)
   }
 
-  def withScheduler[T](pre: TestScheduler => Observable[T])(post: List[T] => Unit)(implicit stop: Duration) = {
+  def withScheduler[T](pre: TestScheduler => Observable[T])(post: List[T] => Unit)(implicit stop: Duration) {
     val scheduler = TestScheduler()
     val obs = pre(scheduler).takeUntil(Observable.interval(stop, scheduler))
     val l = ListBuffer[T]()

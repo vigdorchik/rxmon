@@ -28,7 +28,8 @@ object RxmonBuild extends Build {
 	"org.scalatest" %% "scalatest" % "1.9.1" % "test",
 	"junit" % "junit" % "4.10" % "test"
     ),
-    parallelExecution in Test := false
+    parallelExecution in Test := false,
+    scalacOptions += "-deprecation"
   )
 
   lazy val noPublishSettings = commonSettings ++ Seq (
@@ -54,7 +55,7 @@ object RxmonBuild extends Build {
     settings = publishSettings ++ Seq (
       name := "rxmon",
       libraryDependencies ++= Seq(
-	"com.netflix.rxjava" % "rxjava-scala" % "0.18.4"
+	"com.netflix.rxjava" % "rxjava-scala" % "0.19.1"
       )
     )
   )
