@@ -1,6 +1,11 @@
 # rxmon
 
-Provide a way to monitor your application activity through composing *[RxJava](https://github.com/Netflix/RxJava)* Observable stream. *[Akka](http://akka.io)* actors may send events to monitor, and those will be viewed as Observable.
+To react to error conditions proper, it is necessary to express what the error specific to your application is.
+The most obvious way is to model the monitored world as a set of streams that are provided by the running application.
+Examples of such streams might be the number of incoming requests or the number of errors.
+Given the set of primitive streams, it's easy to compose them into the final "monitorable" stream.
+This module provides combinators for composing *[RxJava](https://github.com/Netflix/RxJava)* Observables.
+In addition, *[Akka](http://akka.io)* actors may send events to monitor, and those will be viewed as Observable stream.
 
 ## Details
 
