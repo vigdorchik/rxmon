@@ -193,6 +193,19 @@ object Operations {
     }
   }
 
+  implicit class GroupOps[A, B](val observable: Observable[(A, B)]) extends AnyVal {
+    /**
+     * Group on the equality of a first element of a pair.
+     */
+    def group: Observable[(A, Observable[B])] = groupByFirst(identity _)
+
+    /**
+     * Generic way to group by discriminator on the first component of a pair.
+     */
+    def groupByFirst[C](f: A => C): Observable[(C, Observable[B])] =
+      observable groupBy (p => f(p._1), _._2)
+  } 
+
   /*
    * Shorthand for creating const observables.
    */
