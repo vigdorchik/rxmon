@@ -38,7 +38,7 @@ object AggregateBenchmark extends App {
     val m = src.max(window.seconds)(s)
 
     var t = 0
-    m subscribe { x =>
+    m.onBackpressureBuffer subscribe { x =>
       t += 1
       if (x == N) {
 	println(s"${System.currentTimeMillis - start} milliseconds elapsed.")

@@ -55,7 +55,7 @@ object RxmonBuild extends Build {
     settings = publishSettings ++ Seq (
       name := "rxmon",
       libraryDependencies ++= Seq(
-	"com.netflix.rxjava" % "rxjava-scala" % "0.19.1"
+	"com.netflix.rxjava" % "rxjava-scala" % "0.20.1"
       )
     )
   )
@@ -66,8 +66,8 @@ object RxmonBuild extends Build {
     settings = publishSettings ++ Seq (
       name := "akkamon",
       libraryDependencies ++= Seq (
-	"com.typesafe.akka" %% "akka-actor" % "2.3.3",
-	"com.typesafe.akka" %% "akka-testkit" % "2.3.3" % "test"
+	"com.typesafe.akka" %% "akka-actor" % "2.3.5",
+	"com.typesafe.akka" %% "akka-testkit" % "2.3.5" % "test"
       )
     ),
     dependencies = Seq(core)

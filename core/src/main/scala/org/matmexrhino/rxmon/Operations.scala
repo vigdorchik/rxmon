@@ -27,7 +27,7 @@ object Operations {
       if (observable eq rop)
         observable map (x => f(x, x))
       else
-        observable combineLatest (rop, f)
+        observable.combineLatestWith(rop)(f)
 
     type Sample = (Long, T)
     def aggregate[R](d: Duration, s: Scheduler)(f: Seq[Sample] => R): Observable[R] =
@@ -188,7 +188,7 @@ object Operations {
      */
     def watchdog(d: Duration)(implicit s: Scheduler): Observable[Boolean] = {
       val m = Observable.interval(d, s) drop 1 merge observable.map(_ => -1L)
-      val w = m window (d, s) map (_ take 1)
+      val w = m tumbling (d, s) map (_ take 1)
       w.flatten map (_ != -1L)
     }
   }
@@ -196,7 +196,7 @@ object Operations {
   /*
    * Shorthand for creating const observables.
    */
-  def const[T](value: T): Observable[T] = Observable items (value)
+  def const[T](value: T): Observable[T] = Observable just (value)
 
   /**
    * Implicit scheduler compatible with java timestamp implementation.

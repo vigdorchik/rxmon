@@ -30,8 +30,10 @@ object BinopBenchmark extends App {
   class MyRegistry extends Registry {
     val start = System.currentTimeMillis
 
-    val leaves = 1 to nLeaves map (x => register[Int](x.toString))
-    val root = leaves reduce (_ + _)
+    val leaves = 1 to nLeaves map {x =>
+      register[Int](x.toString).onBackpressureBuffer
+    }
+    val root = leaves reduce ((x, y) => (x + y).onBackpressureBuffer)
 
     root subscribe { x =>
       if (x == sum) {
