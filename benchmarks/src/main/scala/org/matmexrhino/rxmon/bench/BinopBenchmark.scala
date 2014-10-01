@@ -52,9 +52,7 @@ object BinopBenchmark extends App {
     }
   }
 
-  override def main(args: Array[String]) {
-    val system = ActorSystem()
-    val registry = system.actorOf(Props(classOf[MyRegistry]))
-    system.actorOf(Props(classOf[Send], registry))
-  }
+  val system = ActorSystem()
+  val registry = system.actorOf(Props(classOf[MyRegistry]))
+  system.actorOf(Props(classOf[Send], registry))
 }
