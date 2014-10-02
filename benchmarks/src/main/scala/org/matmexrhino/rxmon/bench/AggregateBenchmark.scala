@@ -23,8 +23,8 @@ import rx.lang.scala.schedulers.TestScheduler
 object AggregateConfig {
   val srcName = "X"
   val window = 10
-  val era = 100
-  val rate = 1000
+  val era = 30
+  val rate = 1000  // increasing this leads to hanging rather than exception raised.
   val N = era * rate
 }
 
@@ -38,7 +38,7 @@ object AggregateBenchmark extends App {
     val m = src.max(window.seconds)(s)
 
     var t = 0
-    m.onBackpressureBuffer subscribe { x =>
+    m subscribe { x =>
       t += 1
       if (x == N) {
 	println(s"${System.currentTimeMillis - start} milliseconds elapsed.")
@@ -50,13 +50,24 @@ object AggregateBenchmark extends App {
     }
   }
 
+  case class Msg(target: ActorRef, gen: Int)
+
   class Send(registry: ActorRef) extends Actor {
     registry ! ListEntries
 
     def receive = {
       case EntriesResponse(targets) =>
 	val target = targets(srcName)
-	for (i <- 1 to era; j <- 1 to rate) target ! (i * j)
+        self ! Msg(target, 1)
+      case Msg(target, gen) =>
+        for (j <- 1 to rate) target ! (gen * j)
+        if (gen < era) {
+          import system.dispatcher
+
+          context.system.scheduler.scheduleOnce(1.seconds) {
+            self ! Msg(target, gen+1)
+          }
+        }
     }
   }
 

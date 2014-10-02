@@ -17,10 +17,13 @@ package bench
 
 import Operations._
 import akka.actor._
+import scala.concurrent.duration._
 
 object BinopConfig {
   val nLeaves = 10
-  val nSends = 1000000
+  val era = 30
+  val rate = 500
+  val nSends = era * rate
   val sum = nLeaves * nSends
 }
 
@@ -31,9 +34,9 @@ object BinopBenchmark extends App {
     val start = System.currentTimeMillis
 
     val leaves = 1 to nLeaves map {x =>
-      register[Int](x.toString).onBackpressureBuffer
+      register[Int](x.toString)
     }
-    val root = leaves reduce ((x, y) => (x + y).onBackpressureBuffer)
+    val root = leaves reduce (_ + _)
 
     root subscribe { x =>
       if (x == sum) {
@@ -43,12 +46,23 @@ object BinopBenchmark extends App {
     }
   }
 
+  case class Msg(targets: Iterable[ActorRef], gen: Int)
+
   class Send(registry: ActorRef) extends Actor {
     registry ! ListEntries
 
     def receive = {
       case EntriesResponse(targets) =>
-	for (i <- 1 to nSends; (_, t) <- targets) t ! i
+        self ! Msg(targets.values, 1)
+      case Msg(targets, gen) =>
+        for (j <- 1 to rate; target <- targets) target ! (gen * j)
+        if (gen < era) {
+          import system.dispatcher
+
+          context.system.scheduler.scheduleOnce(1.seconds) {
+            self ! Msg(targets, gen+1)
+          }
+        }
     }
   }
 
