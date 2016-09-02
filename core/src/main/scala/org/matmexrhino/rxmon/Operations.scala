@@ -73,6 +73,22 @@ object Operations {
     def *[V <% T](v: V): Observable[T] = observable map (num.times(_, v))
 
     /**
+     * Creates an Observable of the given Obserable exp by the parameter power.
+     */
+    def ^(power: Int): Observable[T] = {
+      def inner(value: T): T = {
+        def loop(p: Int, res: T): T =
+          if (p == 1)
+            res
+          else
+            loop(p-1, num.times(value, res))
+
+        loop(power, value)
+      }
+      observable map inner
+    }
+
+    /**
      * Creates an Observable of the fact that (observable < that).
      */
     def <(that: Observable[T]): Observable[Boolean] = binop(that, num.lt _)

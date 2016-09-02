@@ -29,7 +29,14 @@ class OperationsSuite extends FunSuite {
   test("basic") {
     val X: Observable[Int] = Observable.from(1 to 100)
     val F: Observable[Int] = X * X * 2 + 1
-    def f(x: Int) = x * x * 2 + 1
+    def f(x: Int) = x*x*2 + 1
+    assertEquals(X.toBlocking.toList map f, F.toBlocking.toList)
+  }
+
+  test("exponentiation") {
+    val X: Observable[Int] = Observable.from(1 to 100)
+    val F: Observable[Int] = X^3
+    def f(x: Int) = x*x*x
     assertEquals(X.toBlocking.toList map f, F.toBlocking.toList)
   }
 

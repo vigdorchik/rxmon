@@ -13,6 +13,8 @@ The defined combinators, that can be used to construct the final monitored Obser
 
 * binary operations <b>+</b>, <b>-</b>, <b>*</b> with a constant or another <i>Observable</i> for <i>Numeric</i> <i>Observable</i>s.
 
+* exponentiatikon operation <b>^</b> with Int power for <i>Numeric</i> <i>Observable</i>s.
+
 * comparison operations <b> < </b>, <b> > </b> with a constant or another <i>Observable</i> for <i>Numeric</i> <i>Observable</i>s.
 
 * logical operations <b>&&</b>, <b>||</b>, <b>^</b> for two <i>Boolean</i> <i>Observable</i>s.
