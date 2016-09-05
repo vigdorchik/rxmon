@@ -41,7 +41,7 @@ object BinopBenchmark extends App {
     root subscribe { x =>
       if (x == sum) {
 	println(s"${System.currentTimeMillis - start} milliseconds elapsed.")
-	context.system.shutdown()
+	context.system.terminate()
       }
     }
   }

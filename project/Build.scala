@@ -21,12 +21,12 @@ import bintray.Keys._
 object RxmonBuild extends Build {
   lazy val commonSettings = Defaults.buildCore ++ Seq (
     organization := "org.matmexrhino",
-    version := "0.3.1",
-    scalaVersion := "2.11.1",
-    resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
+    version := "0.3.2",
+    scalaVersion := "2.11.8",
+    resolvers += "Typesafe Repository" at "http://dl.bintray.com/typesafe/maven-releases/",
     libraryDependencies ++= Seq(
-	"org.scalatest" %% "scalatest" % "2.2.1" % "test",
-	"junit" % "junit" % "4.10" % "test"
+	"org.scalatest" %% "scalatest" % "3.0.0" % "test",
+	"junit" % "junit" % "4.12" % "test"
     ),
     parallelExecution in Test := false,
     scalacOptions += "-deprecation"
@@ -55,7 +55,7 @@ object RxmonBuild extends Build {
     settings = publishSettings ++ Seq (
       name := "rxmon",
       libraryDependencies ++= Seq(
-	"io.reactivex" %% "rxscala" % "0.21.1"
+	"io.reactivex" %% "rxscala" % "0.26.2"
       )
     )
   )
@@ -66,8 +66,8 @@ object RxmonBuild extends Build {
     settings = publishSettings ++ Seq (
       name := "akkamon",
       libraryDependencies ++= Seq (
-	"com.typesafe.akka" %% "akka-actor" % "2.3.6",
-	"com.typesafe.akka" %% "akka-testkit" % "2.3.6" % "test"
+	"com.typesafe.akka" %% "akka-actor" % "2.4.9",
+	"com.typesafe.akka" %% "akka-testkit" % "2.4.9" % "test"
       )
     ),
     dependencies = Seq(core)

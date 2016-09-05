@@ -22,7 +22,7 @@ import org.scalatest.FunSuite
 
 import akka.testkit.{ TestProbe, TestKit, ImplicitSender }
 import akka.actor.{ ActorRef, ActorSystem, Props }
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import org.scalatest.FunSuite
 import scala.reflect.ClassTag
 import scala.concurrent.duration._
@@ -43,7 +43,7 @@ class RegistrySuite extends FunSuite {
     val l1 = client.expectMsgClass(classOf[List[T]])
     assertEquals(l, l1)
 
-    system.shutdown()
+    system.terminate()
   }
 
   test("int") {

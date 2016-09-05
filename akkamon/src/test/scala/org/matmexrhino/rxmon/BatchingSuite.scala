@@ -47,7 +47,7 @@ class BatchingSuite extends FunSuite {
     val l = client.expectMsgClass(classOf[List[T]])
     assertEquals(List(expected), l)
 
-    system.shutdown()
+    system.terminate()
   }
 
   test("min") {

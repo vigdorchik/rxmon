@@ -42,7 +42,7 @@ object AggregateBenchmark extends App {
       t += 1
       if (x == N) {
 	println(s"${System.currentTimeMillis - start} milliseconds elapsed.")
-	context.system.shutdown()
+	context.system.terminate()
       } else if (t == rate) {
 	t = 0
 	s advanceTimeBy 1.seconds

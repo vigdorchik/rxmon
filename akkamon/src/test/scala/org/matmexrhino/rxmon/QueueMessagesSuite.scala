@@ -23,7 +23,7 @@ import com.typesafe.config.{ Config, ConfigFactory }
 import akka.testkit.{ TestProbe, TestKit, ImplicitSender }
 import akka.actor.{ ActorRef, ActorSystem, Props }
 import akka.dispatch._
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import org.scalatest.FunSuite
 import scala.reflect.ClassTag
 import scala.concurrent.duration._
@@ -55,7 +55,7 @@ class QueueMessagesSuite extends FunSuite {
     val l = client.expectMsgClass(classOf[List[Long]])
     assert(pred(l))
 
-    system.shutdown()
+    system.terminate()
   }
 
   test("size") {
